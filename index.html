@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mapa de Brigadistas por PE â ETP Parauapebas</title>
+<title>Mapa de Brigadistas por PE — ETP Parauapebas</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -40,25 +40,25 @@ body{font-family:Arial,sans-serif;background:#111}
 <div id="map"></div>
 
 <div class="title-bar">
-<h1>COBERTURA DE BRIGADA POR PONTO DE EMERGÃNCIA â IT08 CBMPA</h1>
+<h1>COBERTURA DE BRIGADA POR PONTO DE EMERGÊNCIA — IT08 CBMPA</h1>
 <p>Terminal de Parauapebas (ETP) | 25 PEs | 119 Brigadistas (Pop. fixa ~200) | 15 Bombeiros Civis</p>
 </div>
 
 <div class="toolbar">
 <button onclick="toggleZones()" id="btnZones">Zonas de cobertura</button>
 <button onclick="toggleResponse()" id="btnResp">Tempo de resposta</button>
-<button onclick="toggleConnections()" id="btnConn">ConexÃµes entre PEs</button>
+<button onclick="toggleConnections()" id="btnConn">Conexões entre PEs</button>
 <button onclick="fitAll()">Ver tudo</button>
 </div>
 
 <div class="legend">
 <h3>Brigadistas por PE</h3>
-<div class="legend-item"><div class="legend-dot" style="background:#4CAF50"></div>Conforme (ativos >= necessÃ¡rios)</div>
-<div class="legend-item"><div class="legend-dot" style="background:#FF9800"></div>AtenÃ§Ã£o (parcialmente vencidos)</div>
-<div class="legend-item"><div class="legend-dot" style="background:#f44336"></div>CrÃ­tico (todos vencidos / dÃ©ficit grave)</div>
-<div class="legend-item"><div class="legend-dot" style="background:#2196F3"></div>Base de EmergÃªncia (BM Civil)</div>
+<div class="legend-item"><div class="legend-dot" style="background:#4CAF50"></div>Conforme (ativos >= necessários)</div>
+<div class="legend-item"><div class="legend-dot" style="background:#FF9800"></div>Atenção (parcialmente vencidos)</div>
+<div class="legend-item"><div class="legend-dot" style="background:#f44336"></div>Crítico (todos vencidos / déficit grave)</div>
+<div class="legend-item"><div class="legend-dot" style="background:#2196F3"></div>Base de Emergência (BM Civil)</div>
 <div class="legend-item"><div class="legend-dot" style="background:#9E9E9E"></div>Sem quadro / Incluso em outro PE</div>
-<div style="margin-top:8px;font-size:10px;color:#888">NÃºmero no cÃ­rculo = brigadistas no quadro<br>Tamanho do cÃ­rculo = proporcional Ã  quantidade</div>
+<div style="margin-top:8px;font-size:10px;color:#888">Número no círculo = brigadistas no quadro<br>Tamanho do círculo = proporcional à quantidade</div>
 </div>
 
 <div class="info-panel" id="infoPanel">
@@ -70,37 +70,37 @@ body{font-family:Arial,sans-serif;background:#111}
 <script>
 const DATA = [
 {pe:"PE 01",nome:"PORTARIA PRINCIPAL",lat:-5.999114,lon:-49.895811,area:"PORTARIA PRINCIPAL",risco:"BAIXO",cls:"D-1",nec:2,quadro:2,ativos:2,vencidos:0,status:"CONFORME",obs:"2 brigadistas ativos. Pop. fixa: 12. Conforme IT08.",zona:"NORTE",tempoResp:"2.0 min",distVia:846},
-{pe:"PE 02",nome:"RODOVIÃRIA",lat:-5.998844,lon:-49.896492,area:"PORTARIA PRINCIPAL",risco:"BAIXO",cls:"D-1",nec:2,quadro:0,ativos:0,vencidos:0,status:"SEM QUADRO",obs:"SEM QUADRO de brigada. Pop. fixa: 5. AÃ§Ã£o: instalar quadro min. 2.",zona:"NORTE",tempoResp:"1.9 min",distVia:772},
-{pe:"PE 03",nome:"REFEITÃRIO TACACÃ",lat:-5.999444,lon:-49.895458,area:"REFEITÃRIO TACACÃ",risco:"BAIXO",cls:"D-1",nec:2,quadro:9,ativos:9,vencidos:0,status:"CONFORME",obs:"9 brigadistas ChÃ£o Goiano. Pop. fixa: 18. SuperÃ¡vit +7.",zona:"NORTE",tempoResp:"2.1 min",distVia:876},
-{pe:"PE 04",nome:"CEGEO (GalpÃ£o Testemunho)",lat:-6.000758,lon:-49.894892,area:"GALPÃO DE TESTEMUNHO",risco:"BAIXO",cls:"J-1",nec:2,quadro:6,ativos:6,vencidos:0,status:"CONFORME",obs:"6 brigadistas. Pop. fixa: 8. SuperÃ¡vit +4.",zona:"NORTE",tempoResp:"2.5 min",distVia:1034},
-{pe:"PE 05",nome:"JSL (Base 01)",lat:-6.001942,lon:-49.896458,area:"BASE MOTORISTAS JSL",risco:"BAIXO",cls:"D-1",nec:2,quadro:64,ativos:64,vencidos:0,status:"CONFORME",obs:"64 brigadistas JSL. Pop. fixa: 30 (demais motoristas em trÃ¢nsito). Grande superÃ¡vit +62.",zona:"SUL",tempoResp:"1.5 min",distVia:606},
+{pe:"PE 02",nome:"RODOVIÁRIA",lat:-5.998844,lon:-49.896492,area:"PORTARIA PRINCIPAL",risco:"BAIXO",cls:"D-1",nec:2,quadro:0,ativos:0,vencidos:0,status:"SEM QUADRO",obs:"SEM QUADRO de brigada. Pop. fixa: 5. Ação: instalar quadro min. 2.",zona:"NORTE",tempoResp:"1.9 min",distVia:772},
+{pe:"PE 03",nome:"REFEITÓRIO TACACÁ",lat:-5.999444,lon:-49.895458,area:"REFEITÓRIO TACACÁ",risco:"BAIXO",cls:"D-1",nec:2,quadro:9,ativos:9,vencidos:0,status:"CONFORME",obs:"9 brigadistas Chão Goiano. Pop. fixa: 18. Superávit +7.",zona:"NORTE",tempoResp:"2.1 min",distVia:876},
+{pe:"PE 04",nome:"CEGEO (Galpão Testemunho)",lat:-6.000758,lon:-49.894892,area:"GALPÃO DE TESTEMUNHO",risco:"BAIXO",cls:"J-1",nec:2,quadro:6,ativos:6,vencidos:0,status:"CONFORME",obs:"6 brigadistas. Pop. fixa: 8. Superávit +4.",zona:"NORTE",tempoResp:"2.5 min",distVia:1034},
+{pe:"PE 05",nome:"JSL (Base 01)",lat:-6.001942,lon:-49.896458,area:"BASE MOTORISTAS JSL",risco:"BAIXO",cls:"D-1",nec:2,quadro:64,ativos:64,vencidos:0,status:"CONFORME",obs:"64 brigadistas JSL. Pop. fixa: 30 (demais motoristas em trânsito). Grande superávit +62.",zona:"SUL",tempoResp:"1.5 min",distVia:606},
 {pe:"PE 06",nome:"MOEGA",lat:-6.002350,lon:-49.896647,area:"BASE MOTORISTAS JSL",risco:"BAIXO",cls:"D-1",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 05",obs:"Coberto pelo PE 05 (JSL). Dist: 50m.",zona:"SUL",tempoResp:"1.5 min",distVia:632},
-{pe:"PE 07",nome:"COBRE (Sossego)",lat:-6.001522,lon:-49.896822,area:"GALPÃO DO COBRE",risco:"MÃDIO",cls:"I-2",nec:2,quadro:6,ativos:1,vencidos:5,status:"ATENÃÃO",obs:"5 VENCIDOS de 6. Pop. fixa: 15. Apenas 1 ativo. Reciclagem URGENTE.",zona:"SUL",tempoResp:"1.3 min",distVia:545},
-{pe:"PE 08",nome:"COBRE (Salobo)",lat:-6.002394,lon:-49.897864,area:"GALPÃO DO COBRE",risco:"MÃDIO",cls:"I-2",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 07",obs:"Coberto pelo PE 07 (Cobre). Dist: 151m.",zona:"SUL",tempoResp:"1.1 min",distVia:441},
+{pe:"PE 07",nome:"COBRE (Sossego)",lat:-6.001522,lon:-49.896822,area:"GALPÃO DO COBRE",risco:"MÉDIO",cls:"I-2",nec:2,quadro:6,ativos:1,vencidos:5,status:"ATENÇÃO",obs:"5 VENCIDOS de 6. Pop. fixa: 15. Apenas 1 ativo. Reciclagem URGENTE.",zona:"SUL",tempoResp:"1.3 min",distVia:545},
+{pe:"PE 08",nome:"COBRE (Salobo)",lat:-6.002394,lon:-49.897864,area:"GALPÃO DO COBRE",risco:"MÉDIO",cls:"I-2",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 07",obs:"Coberto pelo PE 07 (Cobre). Dist: 151m.",zona:"SUL",tempoResp:"1.1 min",distVia:441},
 {pe:"PE 09",nome:"ETEI",lat:-6.002931,lon:-49.898247,area:"BASE MULTISERV",risco:"BAIXO",cls:"D-1",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 18",obs:"Coberto pelo PE 18 (Multiserv). Dist: 98m.",zona:"LESTE",tempoResp:"1.0 min",distVia:398},
 {pe:"PE 10",nome:"ETA",lat:-6.004069,lon:-49.898611,area:"BASE MULTISERV",risco:"BAIXO",cls:"D-1",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 18",obs:"Coberto pelo PE 18. Ponto mais ao sul do terminal.",zona:"LESTE",tempoResp:"1.3 min",distVia:558},
-{pe:"PE 11",nome:"SUBCONJUNTO SLB",lat:-5.998804,lon:-49.899264,area:"NÃQUEL OPERAÃÃO",risco:"MÃDIO",cls:"I-2",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 15",obs:"Coberto pelo PE 15 (NÃ­quel). Dist: 232m.",zona:"LESTE",tempoResp:"1.1 min",distVia:444},
+{pe:"PE 11",nome:"SUBCONJUNTO SLB",lat:-5.998804,lon:-49.899264,area:"NÍQUEL OPERAÇÃO",risco:"MÉDIO",cls:"I-2",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 15",obs:"Coberto pelo PE 15 (Níquel). Dist: 232m.",zona:"LESTE",tempoResp:"1.1 min",distVia:444},
 {pe:"PE 12",nome:"HELIPONTO",lat:-5.999042,lon:-49.900756,area:"DELLAVOLPE",risco:"BAIXO",cls:"D-1",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 14",obs:"Coberto pelo PE 14 (DV). Dist: 117m.",zona:"OESTE",tempoResp:"0.8 min",distVia:352},
 {pe:"PE 13",nome:"ETE",lat:-5.999150,lon:-49.901772,area:"DELLAVOLPE",risco:"BAIXO",cls:"D-1",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 14",obs:"Coberto pelo PE 14 (DV). Ponto extremo oeste.",zona:"OESTE",tempoResp:"1.1 min",distVia:450},
-{pe:"PE 14",nome:"DELLA VOLPE",lat:-6.000050,lon:-49.900617,area:"DELLAVOLPE",risco:"BAIXO",cls:"D-1",nec:2,quadro:7,ativos:0,vencidos:7,status:"CRÃTICO",obs:"CRÃTICO: TODOS 7 VENCIDOS. Pop. fixa: 25 (demais motoristas em trÃ¢nsito). Reciclagem URGENTE.",zona:"OESTE",tempoResp:"0.5 min",distVia:205},
-{pe:"PE 15",nome:"GALPÃO DO NÃQUEL",lat:-6.000783,lon:-49.899944,area:"NÃQUEL OPERAÃÃO",risco:"MÃDIO",cls:"I-2",nec:2,quadro:7,ativos:7,vencidos:0,status:"CONFORME",obs:"7 brigadistas. Pop. fixa: 15. SuperÃ¡vit +5. Ãrea risco mÃ©dio OK.",zona:"LESTE",tempoResp:"0.3 min",distVia:112},
+{pe:"PE 14",nome:"DELLA VOLPE",lat:-6.000050,lon:-49.900617,area:"DELLAVOLPE",risco:"BAIXO",cls:"D-1",nec:2,quadro:7,ativos:0,vencidos:7,status:"CRÍTICO",obs:"CRÍTICO: TODOS 7 VENCIDOS. Pop. fixa: 25 (demais motoristas em trânsito). Reciclagem URGENTE.",zona:"OESTE",tempoResp:"0.5 min",distVia:205},
+{pe:"PE 15",nome:"GALPÃO DO NÍQUEL",lat:-6.000783,lon:-49.899944,area:"NÍQUEL OPERAÇÃO",risco:"MÉDIO",cls:"I-2",nec:2,quadro:7,ativos:7,vencidos:0,status:"CONFORME",obs:"7 brigadistas. Pop. fixa: 15. Superávit +5. Área risco médio OK.",zona:"LESTE",tempoResp:"0.3 min",distVia:112},
 {pe:"PE 16",nome:"ESTAC. EQUIPAMENTOS",lat:-6.002078,lon:-49.900150,area:"DELLAVOLPE",risco:"BAIXO",cls:"D-1",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 14",obs:"Coberto pelo PE 14 (DV).",zona:"OESTE",tempoResp:"0.2 min",distVia:102},
-{pe:"PE 17",nome:"DESCARGA CARVÃO",lat:-6.002736,lon:-49.898853,area:"BASE MULTISERV",risco:"BAIXO",cls:"D-1",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 18",obs:"Coberto pelo PE 18 (Multiserv). Dist: 79m.",zona:"LESTE",tempoResp:"0.7 min",distVia:305},
-{pe:"PE 18",nome:"BASE MULTSERV",lat:-6.002142,lon:-49.899406,area:"BASE MULTISERV",risco:"BAIXO",cls:"D-1",nec:2,quadro:6,ativos:6,vencidos:0,status:"CONFORME",obs:"6 brigadistas. Pop. fixa: 20. SuperÃ¡vit +4. Cobre PEs 09,10,17,19,20,21.",zona:"LESTE",tempoResp:"0.4 min",distVia:168},
-{pe:"PE 19",nome:"PÃTIO CARVÃO",lat:-6.001450,lon:-49.899497,area:"BASE MULTISERV",risco:"BAIXO",cls:"D-1",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 18",obs:"Coberto pelo PE 18 (Multiserv).",zona:"LESTE",tempoResp:"0.3 min",distVia:121},
+{pe:"PE 17",nome:"DESCARGA CARVÃO",lat:-6.002736,lon:-49.898853,area:"BASE MULTISERV",risco:"BAIXO",cls:"D-1",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 18",obs:"Coberto pelo PE 18 (Multiserv). Dist: 79m.",zona:"LESTE",tempoResp:"0.7 min",distVia:305},
+{pe:"PE 18",nome:"BASE MULTSERV",lat:-6.002142,lon:-49.899406,area:"BASE MULTISERV",risco:"BAIXO",cls:"D-1",nec:2,quadro:6,ativos:6,vencidos:0,status:"CONFORME",obs:"6 brigadistas. Pop. fixa: 20. Superávit +4. Cobre PEs 09,10,17,19,20,21.",zona:"LESTE",tempoResp:"0.4 min",distVia:168},
+{pe:"PE 19",nome:"PÁTIO CARVÃO",lat:-6.001450,lon:-49.899497,area:"BASE MULTISERV",risco:"BAIXO",cls:"D-1",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 18",obs:"Coberto pelo PE 18 (Multiserv).",zona:"LESTE",tempoResp:"0.3 min",distVia:121},
 {pe:"PE 20",nome:"SHAFT",lat:-6.002331,lon:-49.898806,area:"BASE MULTISERV",risco:"BAIXO",cls:"D-1",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 18",obs:"Coberto pelo PE 18 (Multiserv).",zona:"LESTE",tempoResp:"0.7 min",distVia:274},
-{pe:"PE 21",nome:"PÃTIO DE MATERIAIS",lat:-6.001478,lon:-49.899044,area:"BASE MULTISERV",risco:"BAIXO",cls:"D-1",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 18",obs:"Coberto pelo PE 18 (Multiserv).",zona:"LESTE",tempoResp:"0.4 min",distVia:187},
-{pe:"PE 22",nome:"SUBESTAÃÃO",lat:-6.000836,lon:-49.898669,area:"SUBESTAÃÃO MANUTENÃÃO",risco:"ALTO",cls:"I-3",nec:2,quadro:0,ativos:0,vencidos:0,status:"VER PE 23",obs:"Pop. fixa: 5. RISCO ALTO I-3. Coberto por PE 23 (19 brig). Formalizar cobertura conjunta.",zona:"CENTRAL",tempoResp:"0.6 min",distVia:256},
-{pe:"PE 23",nome:"ESCRITÃRIO CENTRAL",lat:-6.000694,lon:-49.898503,area:"ESCRITÃRIO CENTRAL VALE",risco:"BAIXO",cls:"D-1",nec:2,quadro:19,ativos:19,vencidos:0,status:"CONFORME",obs:"19 brig. Pop. fixa: 30. Cobre: EscritÃ³rio+SESMT+Ferramentaria+Lab ElÃ©trica+SubestaÃ§Ã£o. SuperÃ¡vit +17.",zona:"CENTRAL",tempoResp:"0.7 min",distVia:286},
-{pe:"PE 24",nome:"PÃTIO DOJO",lat:-6.000403,lon:-49.898219,area:"ESCRITÃRIO CENTRAL VALE",risco:"BAIXO",cls:"D-1",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 23",obs:"Coberto pelo PE 23 (EscritÃ³rio). Dist: 45m.",zona:"CENTRAL",tempoResp:"0.8 min",distVia:341},
-{pe:"PE 25",nome:"BASE DE EMERGÃNCIA",lat:-6.001447,lon:-49.900342,area:"S.O.S.",risco:"BAIXO",cls:"D-1",nec:2,quadro:5,ativos:5,vencidos:0,status:"CONFORME",obs:"5 brigadistas + 15 Bombeiros Civis operacionais (Turnos A/B/C/D). Base principal de resposta.",zona:"EMERGÃNCIA",tempoResp:"ORIGEM",distVia:0},
+{pe:"PE 21",nome:"PÁTIO DE MATERIAIS",lat:-6.001478,lon:-49.899044,area:"BASE MULTISERV",risco:"BAIXO",cls:"D-1",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 18",obs:"Coberto pelo PE 18 (Multiserv).",zona:"LESTE",tempoResp:"0.4 min",distVia:187},
+{pe:"PE 22",nome:"SUBESTAÇÃO",lat:-6.000836,lon:-49.898669,area:"SUBESTAÇÃO MANUTENÇÃO",risco:"ALTO",cls:"I-3",nec:2,quadro:0,ativos:0,vencidos:0,status:"VER PE 23",obs:"Pop. fixa: 5. RISCO ALTO I-3. Coberto por PE 23 (19 brig). Formalizar cobertura conjunta.",zona:"CENTRAL",tempoResp:"0.6 min",distVia:256},
+{pe:"PE 23",nome:"ESCRITÓRIO CENTRAL",lat:-6.000694,lon:-49.898503,area:"ESCRITÓRIO CENTRAL VALE",risco:"BAIXO",cls:"D-1",nec:2,quadro:19,ativos:19,vencidos:0,status:"CONFORME",obs:"19 brig. Pop. fixa: 30. Cobre: Escritório+SESMT+Ferramentaria+Lab Elétrica+Subestação. Superávit +17.",zona:"CENTRAL",tempoResp:"0.7 min",distVia:286},
+{pe:"PE 24",nome:"PÁTIO DOJO",lat:-6.000403,lon:-49.898219,area:"ESCRITÓRIO CENTRAL VALE",risco:"BAIXO",cls:"D-1",nec:0,quadro:0,ativos:0,vencidos:0,status:"VER PE 23",obs:"Coberto pelo PE 23 (Escritório). Dist: 45m.",zona:"CENTRAL",tempoResp:"0.8 min",distVia:341},
+{pe:"PE 25",nome:"BASE DE EMERGÊNCIA",lat:-6.001447,lon:-49.900342,area:"S.O.S.",risco:"BAIXO",cls:"D-1",nec:2,quadro:5,ativos:5,vencidos:0,status:"CONFORME",obs:"5 brigadistas + 15 Bombeiros Civis operacionais (Turnos A/B/C/D). Base principal de resposta.",zona:"EMERGÊNCIA",tempoResp:"ORIGEM",distVia:0},
 ];
 
 function statusColor(s){
 if(s==='CONFORME')return '#4CAF50';
-if(s==='CRÃTICO')return '#f44336';
-if(s==='NÃO CONFORME')return '#FF5722';
-if(s==='ATENÃÃO')return '#FF9800';
+if(s==='CRÍTICO')return '#f44336';
+if(s==='NÃO CONFORME')return '#FF5722';
+if(s==='ATENÇÃO')return '#FF9800';
 if(s==='SEM QUADRO')return '#9E9E9E';
 if(s.startsWith('VER'))return '#78909C';
 return '#2196F3';
@@ -108,8 +108,8 @@ return '#2196F3';
 
 function statusBg(s){
 if(s==='CONFORME')return 'rgba(76,175,80,0.2)';
-if(s==='CRÃTICO')return 'rgba(244,67,54,0.2)';
-if(s==='NÃO CONFORME')return 'rgba(255,87,34,0.2)';
+if(s==='CRÍTICO')return 'rgba(244,67,54,0.2)';
+if(s==='NÃO CONFORME')return 'rgba(255,87,34,0.2)';
 return 'rgba(255,255,255,0.1)';
 }
 
@@ -130,7 +130,7 @@ className:'pe-marker',
 iconSize:[sz+20,sz+30],
 iconAnchor:[(sz+20)/2,sz/2],
 html:`<div class="pe-icon">
-<div class="pe-circle" style="width:${sz}px;height:${sz}px;background:${col};font-size:${sz>30?14:11}px">${count>0?count:(d.status==='SEM QUADRO'?'â':'')}</div>
+<div class="pe-circle" style="width:${sz}px;height:${sz}px;background:${col};font-size:${sz>30?14:11}px">${count>0?count:(d.status==='SEM QUADRO'?'—':'')}</div>
 <div class="pe-name">${d.pe} ${d.nome.substring(0,16)}</div>
 ${d.nec>0?`<div class="pe-count" style="background:${d.ativos>=d.nec?'rgba(76,175,80,0.8)':d.vencidos>0?'rgba(244,67,54,0.9)':'rgba(255,152,0,0.8)'};color:#fff">${d.ativos} ativos / ${d.nec} nec.</div>`:''}
 </div>`
@@ -143,20 +143,20 @@ function showInfo(i){
 const d=DATA[i];
 const panel=document.getElementById('infoPanel');
 panel.style.display='block';
-document.getElementById('infoTitle').textContent=d.pe+' â '+d.nome;
+document.getElementById('infoTitle').textContent=d.pe+' — '+d.nome;
 let html=`
 <div class="status-bar">
 <span class="status-chip" style="background:${statusColor(d.status)};color:#fff">${d.status}</span>
-<span class="status-chip" style="background:${d.risco==='ALTO'?'#f44336':d.risco==='MÃDIO'?'#FF9800':'#4CAF50'};color:#fff">${d.cls} ${d.risco}</span>
+<span class="status-chip" style="background:${d.risco==='ALTO'?'#f44336':d.risco==='MÉDIO'?'#FF9800':'#4CAF50'};color:#fff">${d.cls} ${d.risco}</span>
 </div>
-<div class="row"><span class="label">Ãrea IT08</span><span class="value">${d.area}</span></div>
+<div class="row"><span class="label">Área IT08</span><span class="value">${d.area}</span></div>
 <div class="row"><span class="label">Zona</span><span class="value">${d.zona}</span></div>
-<div class="row"><span class="label">Brigadistas necessÃ¡rios</span><span class="value">${d.nec}</span></div>
+<div class="row"><span class="label">Brigadistas necessários</span><span class="value">${d.nec}</span></div>
 <div class="row"><span class="label">Brigadistas no quadro</span><span class="value" style="color:${d.quadro>=d.nec?'#4CAF50':'#f44336'}">${d.quadro}</span></div>
 <div class="row"><span class="label">Ativos</span><span class="value" style="color:#4CAF50">${d.ativos}</span></div>
 <div class="row"><span class="label">Vencidos</span><span class="value" style="color:${d.vencidos>0?'#f44336':'#aaa'}">${d.vencidos}</span></div>
-<div class="row"><span class="label">SuperÃ¡vit/DÃ©ficit</span><span class="value" style="color:${(d.ativos-d.nec)>=0?'#4CAF50':'#f44336'}">${d.nec>0?(d.ativos-d.nec>=0?'+':'')+(d.ativos-d.nec):'â'}</span></div>
-<div class="row"><span class="label">Dist. rodoviÃ¡ria da Base</span><span class="value">${d.distVia}m</span></div>
+<div class="row"><span class="label">Superávit/Déficit</span><span class="value" style="color:${(d.ativos-d.nec)>=0?'#4CAF50':'#f44336'}">${d.nec>0?(d.ativos-d.nec>=0?'+':'')+(d.ativos-d.nec):'—'}</span></div>
+<div class="row"><span class="label">Dist. rodoviária da Base</span><span class="value">${d.distVia}m</span></div>
 <div class="row"><span class="label">Tempo resposta (25km/h)</span><span class="value">${d.tempoResp}</span></div>
 <div style="margin-top:10px;padding:8px 10px;background:${statusBg(d.status)};border-radius:6px;font-size:11px">${d.obs}</div>`;
 document.getElementById('infoContent').innerHTML=html;
