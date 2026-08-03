@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mapa de Brigada — ETP</title>
+<title>Cobertura de Brigada IT08 — ETP Parauapebas</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -13,186 +13,477 @@ body{font-family:Arial,sans-serif;background:#111}
 
 .title-bar{
   position:fixed;top:0;left:50%;transform:translateX(-50%);
-  background:rgba(13,27,42,0.95);color:#fff;padding:10px 28px;
-  border-radius:0 0 10px 10px;z-index:1000;text-align:center;
-  backdrop-filter:blur(8px);border:1px solid rgba(79,195,247,0.3);border-top:none;
+  background:rgba(0,58,112,0.95);color:#fff;padding:10px 24px;
+  border-radius:0 0 12px 12px;z-index:1000;text-align:center;
+  backdrop-filter:blur(8px);border-bottom:3px solid #FFD600;
 }
-.title-bar h1{font-size:14px;color:#4fc3f7;letter-spacing:1px}
-.title-bar p{font-size:11px;color:#ccc;margin-top:3px}
-.title-bar .nums{display:flex;gap:16px;justify-content:center;margin-top:6px}
-.title-bar .num-box{text-align:center}
-.title-bar .num-big{font-size:22px;font-weight:800;color:#4fc3f7}
-.title-bar .num-label{font-size:9px;color:#aaa;text-transform:uppercase}
+.title-bar h1{font-size:13px;color:#FFD600;letter-spacing:1.5px}
+.title-bar p{font-size:10px;color:#ccc;margin-top:2px}
+.title-bar .nums{display:flex;gap:20px;justify-content:center;margin-top:6px}
+.title-bar .nb{text-align:center}
+.title-bar .nb-v{font-size:20px;font-weight:800;color:#fff}
+.title-bar .nb-l{font-size:8px;color:#aaa;text-transform:uppercase;letter-spacing:0.5px}
 
 .legend{
   position:fixed;bottom:12px;left:12px;
-  background:rgba(13,27,42,0.95);color:#fff;padding:12px 16px;
-  border-radius:10px;font-size:12px;z-index:1000;
-  border:1px solid rgba(79,195,247,0.2);
+  background:rgba(0,30,60,0.94);color:#fff;padding:12px 16px;
+  border-radius:10px;font-size:11px;z-index:1000;
+  border:1px solid rgba(255,214,0,0.2);
 }
-.legend-item{display:flex;align-items:center;gap:8px;margin:5px 0}
-.legend-dot{width:14px;height:14px;border-radius:50%;border:2px solid #fff;flex-shrink:0}
+.legend h3{font-size:11px;color:#FFD600;margin-bottom:6px;letter-spacing:1px}
+.lg-i{display:flex;align-items:center;gap:8px;margin:4px 0}
+.lg-d{width:12px;height:12px;border-radius:2px;flex-shrink:0}
 
 .pe-marker{background:none;border:none}
-.pe-icon{display:flex;flex-direction:column;align-items:center;font-family:Arial,sans-serif}
-.pe-circle{
-  border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-weight:800;color:#fff;border:3px solid #fff;
-  box-shadow:0 2px 10px rgba(0,0,0,0.6);
-  text-shadow:1px 1px 2px rgba(0,0,0,0.8);
-  cursor:pointer;transition:transform 0.2s;
+
+/* PIN flutuante */
+.pin-wrap{display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.2s}
+.pin-wrap:hover{transform:translateY(-4px)}
+.pin-head{
+  padding:4px 10px;border-radius:6px;font-size:12px;font-weight:800;
+  color:#fff;text-align:center;white-space:nowrap;
+  box-shadow:0 3px 10px rgba(0,0,0,0.5);
+  letter-spacing:0.5px;position:relative;
 }
-.pe-circle:hover{transform:scale(1.2)}
-.pe-label{
-  font-size:10px;color:#fff;font-weight:700;margin-top:3px;
+.pin-arrow{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;margin-top:-1px}
+.pin-label{
+  font-size:9px;color:#fff;font-weight:600;margin-top:3px;
   text-shadow:1px 1px 3px #000,-1px -1px 3px #000;
-  white-space:nowrap;text-align:center;max-width:100px
+  white-space:nowrap;text-align:center;max-width:100px;
+  overflow:hidden;text-overflow:ellipsis;
 }
 
-.info-panel{
-  position:fixed;top:50%;right:16px;transform:translateY(-50%);
-  background:rgba(13,27,42,0.96);color:#fff;padding:20px 24px;
-  border-radius:14px;z-index:1000;width:280px;display:none;
-  border:1px solid rgba(79,195,247,0.3);
+/* Painel lateral */
+.panel{
+  position:fixed;top:50%;right:14px;transform:translateY(-50%);
+  background:rgba(0,30,60,0.96);color:#fff;
+  width:320px;border-radius:14px;z-index:1001;
+  display:none;overflow:hidden;
+  border:1px solid rgba(255,214,0,0.3);
   box-shadow:0 8px 30px rgba(0,0,0,0.5);
+  max-height:85vh;overflow-y:auto;
 }
-.info-panel h2{font-size:16px;color:#4fc3f7;margin-bottom:4px}
-.info-panel .info-local{font-size:11px;color:#aaa;margin-bottom:12px}
-.info-status{
-  display:inline-block;padding:4px 12px;border-radius:20px;
-  font-size:12px;font-weight:700;margin-bottom:14px;
+.panel-header{
+  background:rgba(0,0,0,0.3);padding:14px 18px;
+  border-bottom:2px solid #FFD600;
 }
-.info-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.08)}
-.info-row .lbl{color:#aaa}
-.info-row .val{font-weight:700}
+.panel-header h2{font-size:18px;font-weight:800;color:#FFD600;letter-spacing:1px}
+.panel-header .sub{font-size:12px;color:#ccc;margin-top:2px}
+.panel-body{padding:14px 18px}
+.panel-status{
+  display:inline-block;padding:4px 14px;border-radius:20px;
+  font-size:11px;font-weight:700;letter-spacing:0.5px;
+}
+.panel-section{margin-top:14px}
+.panel-section h3{font-size:11px;color:#FFD600;letter-spacing:1px;margin-bottom:6px;border-bottom:1px solid rgba(255,214,0,0.15);padding-bottom:4px}
+.pr{display:flex;justify-content:space-between;padding:4px 0;font-size:12px}
+.pr .k{color:#aaa}
+.pr .v{font-weight:700}
+.cov-tag{
+  display:inline-block;background:rgba(255,214,0,0.12);
+  border:1px solid rgba(255,214,0,0.25);
+  padding:2px 8px;border-radius:4px;font-size:10px;
+  margin:2px 3px 2px 0;color:#FFD600;font-weight:600;
+}
+.cov-area{
+  font-size:11px;color:#ccc;padding:3px 0;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
 .close-btn{
-  margin-top:14px;background:rgba(79,195,247,0.15);color:#4fc3f7;
-  border:1px solid rgba(79,195,247,0.3);padding:8px;border-radius:8px;
+  margin-top:14px;background:rgba(255,214,0,0.1);color:#FFD600;
+  border:1px solid rgba(255,214,0,0.3);padding:8px;border-radius:8px;
   cursor:pointer;font-size:12px;width:100%;font-weight:600;
 }
-.close-btn:hover{background:rgba(79,195,247,0.3)}
+.close-btn:hover{background:rgba(255,214,0,0.2)}
 
 .btn-fit{
   position:fixed;bottom:12px;right:12px;z-index:1000;
-  background:rgba(13,27,42,0.95);color:#4fc3f7;border:1px solid rgba(79,195,247,0.3);
-  padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;
+  background:rgba(0,30,60,0.95);color:#FFD600;
+  border:1px solid rgba(255,214,0,0.3);
+  padding:8px 14px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;
 }
-.btn-fit:hover{background:rgba(79,195,247,0.2)}
 </style>
 </head>
 <body>
 <div id="map"></div>
 
 <div class="title-bar">
-<h1>BRIGADA DE INCÊNDIO — ETP PARAUAPEBAS</h1>
-<p>Cobertura por Ponto de Encontro</p>
+<h1>COBERTURA DE BRIGADA — IT08 CBMPA</h1>
+<p>Terminal de Parauapebas (ETP) — Vale Metais Básicos</p>
 <div class="nums">
-  <div class="num-box"><div class="num-big">25</div><div class="num-label">Pontos</div></div>
-  <div class="num-box"><div class="num-big">119</div><div class="num-label">Brigadistas</div></div>
-  <div class="num-box"><div class="num-big" style="color:#4CAF50">+95</div><div class="num-label">Superávit</div></div>
+  <div class="nb"><div class="nb-v">25</div><div class="nb-l">Pontos de Encontro</div></div>
+  <div class="nb"><div class="nb-v">119</div><div class="nb-l">Brigadistas Básicos</div></div>
+  <div class="nb"><div class="nb-v">15</div><div class="nb-l">Bombeiros Civis</div></div>
+  <div class="nb"><div class="nb-v" style="color:#4CAF50">+95</div><div class="nb-l">Superávit IT08</div></div>
 </div>
 </div>
 
 <div class="legend">
-<div class="legend-item"><div class="legend-dot" style="background:#4CAF50"></div> OK — Conforme</div>
-<div class="legend-item"><div class="legend-dot" style="background:#FF9800"></div> Atenção — Reciclagem</div>
-<div class="legend-item"><div class="legend-dot" style="background:#f44336"></div> Crítico</div>
-<div class="legend-item"><div class="legend-dot" style="background:#2196F3"></div> Base de Emergência</div>
-<div class="legend-item"><div class="legend-dot" style="background:#78909C"></div> Coberto por outro PE</div>
+<h3>SITUAÇÃO IT08</h3>
+<div class="lg-i"><div class="lg-d" style="background:#4CAF50"></div> Conforme — ativos ≥ necessários</div>
+<div class="lg-i"><div class="lg-d" style="background:#FF9800"></div> Atenção — brigadistas com curso vencido</div>
+<div class="lg-i"><div class="lg-d" style="background:#f44336"></div> Crítico — todos vencidos ou déficit</div>
+<div class="lg-i"><div class="lg-d" style="background:#1E88E5"></div> Base de Emergência (BM Civis)</div>
+<div class="lg-i"><div class="lg-d" style="background:#78909C"></div> Coberto por PE adjacente</div>
 </div>
 
 <button class="btn-fit" onclick="fitAll()">Ver tudo</button>
 
-<div class="info-panel" id="infoPanel">
-<h2 id="infoTitle"></h2>
-<div class="info-local" id="infoLocal"></div>
-<div id="infoStatus"></div>
-<div id="infoRows"></div>
-<button class="close-btn" onclick="document.getElementById('infoPanel').style.display='none'">Fechar</button>
+<div class="panel" id="panel">
+<div class="panel-header">
+  <h2 id="pTitle"></h2>
+  <div class="sub" id="pSub"></div>
+</div>
+<div class="panel-body">
+  <div id="pStatus"></div>
+  <div id="pContent"></div>
+  <button class="close-btn" onclick="closePanel()">Fechar</button>
+</div>
 </div>
 
 <script>
 const DATA = [
-{pe:"PE-01",nome:"Portaria",lat:-5.999114,lon:-49.895811,nec:2,ativos:2,venc:0,status:"OK",obs:"Conforme"},
-{pe:"PE-02",nome:"Rodoviária",lat:-5.998844,lon:-49.896492,nec:2,ativos:0,venc:0,status:"COBERTO",obs:"Sem quadro próprio"},
-{pe:"PE-03",nome:"Refeitório",lat:-5.999444,lon:-49.895458,nec:2,ativos:9,venc:0,status:"OK",obs:"Superávit +7"},
-{pe:"PE-04",nome:"CCGEO",lat:-6.000758,lon:-49.894892,nec:2,ativos:6,venc:0,status:"OK",obs:"Superávit +4"},
-{pe:"PE-05",nome:"JSL",lat:-6.001942,lon:-49.896458,nec:2,ativos:64,venc:0,status:"OK",obs:"Superávit +62"},
-{pe:"PE-06",nome:"Moega",lat:-6.002350,lon:-49.896647,nec:0,ativos:0,venc:0,status:"COBERTO",obs:"Coberto por PE-05"},
-{pe:"PE-07",nome:"Cobre Sossego",lat:-6.001522,lon:-49.896822,nec:2,ativos:1,venc:5,status:"ATENÇÃO",obs:"5 vencidos — reciclagem"},
-{pe:"PE-08",nome:"Cobre Salobo",lat:-6.002394,lon:-49.897864,nec:0,ativos:0,venc:0,status:"COBERTO",obs:"Coberto por PE-07"},
-{pe:"PE-09",nome:"ETEI",lat:-6.002931,lon:-49.898247,nec:0,ativos:0,venc:0,status:"COBERTO",obs:"Coberto por PE-18"},
-{pe:"PE-10",nome:"ETA",lat:-6.004069,lon:-49.898611,nec:0,ativos:0,venc:0,status:"COBERTO",obs:"Coberto por PE-18"},
-{pe:"PE-11",nome:"Subconjunto",lat:-5.998804,lon:-49.899264,nec:0,ativos:0,venc:0,status:"COBERTO",obs:"Coberto por PE-15"},
-{pe:"PE-12",nome:"Heliponto",lat:-5.999042,lon:-49.900756,nec:0,ativos:0,venc:0,status:"COBERTO",obs:"Coberto por PE-14"},
-{pe:"PE-13",nome:"ETE",lat:-5.999150,lon:-49.901772,nec:0,ativos:0,venc:0,status:"COBERTO",obs:"Coberto por PE-14"},
-{pe:"PE-14",nome:"Della Volpe",lat:-6.000050,lon:-49.900617,nec:2,ativos:0,venc:7,status:"CRÍTICO",obs:"Todos 7 vencidos"},
-{pe:"PE-15",nome:"Galpão Níquel",lat:-6.000783,lon:-49.899944,nec:2,ativos:7,venc:0,status:"OK",obs:"Superávit +5"},
-{pe:"PE-16",nome:"Estac. Equipam.",lat:-6.002078,lon:-49.900150,nec:0,ativos:0,venc:0,status:"COBERTO",obs:"Coberto por PE-14"},
-{pe:"PE-17",nome:"Desc. Carvão",lat:-6.002736,lon:-49.898853,nec:0,ativos:0,venc:0,status:"COBERTO",obs:"Coberto por PE-18"},
-{pe:"PE-18",nome:"Multiserv",lat:-6.002142,lon:-49.899406,nec:2,ativos:6,venc:0,status:"OK",obs:"Superávit +4"},
-{pe:"PE-19",nome:"Pátio Carvão",lat:-6.001450,lon:-49.899497,nec:0,ativos:0,venc:0,status:"COBERTO",obs:"Coberto por PE-18"},
-{pe:"PE-20",nome:"SHAFT",lat:-6.002331,lon:-49.898806,nec:0,ativos:0,venc:0,status:"COBERTO",obs:"Coberto por PE-18"},
-{pe:"PE-21",nome:"Pátio Materiais",lat:-6.001478,lon:-49.899044,nec:0,ativos:0,venc:0,status:"COBERTO",obs:"Coberto por PE-18"},
-{pe:"PE-22",nome:"Subestação",lat:-6.000836,lon:-49.898669,nec:2,ativos:0,venc:0,status:"COBERTO",obs:"Coberto por PE-23"},
-{pe:"PE-23",nome:"Escritório",lat:-6.000694,lon:-49.898503,nec:2,ativos:19,venc:0,status:"OK",obs:"Superávit +17"},
-{pe:"PE-24",nome:"Dojô",lat:-6.000403,lon:-49.898219,nec:0,ativos:0,venc:0,status:"COBERTO",obs:"Coberto por PE-23"},
-{pe:"PE-25",nome:"Base Emergência",lat:-6.001447,lon:-49.900342,nec:2,ativos:5,venc:0,status:"BASE",obs:"Base + 15 BM Civis"},
+{pe:"PE-01",nome:"Portaria Principal",lat:-5.999114,lon:-49.895811,
+ area:"Portaria Principal",risco:"BAIXO",cls:"D-1",popFixa:12,
+ nec:2,quadro:2,ativos:2,venc:0,status:"CONFORME",
+ obs:"2 brigadistas ativos. Conforme IT08.",
+ cobre:[],cobertoPor:null,
+ areas:["Portaria","Balança rodoviária"]},
+
+{pe:"PE-02",nome:"Rodoviária",lat:-5.998844,lon:-49.896492,
+ area:"Portaria Principal",risco:"BAIXO",cls:"D-1",popFixa:5,
+ nec:2,quadro:0,ativos:0,venc:0,status:"SEM QUADRO",
+ obs:"Sem quadro próprio de brigada.",
+ cobre:[],cobertoPor:null,
+ areas:["Terminal rodoviário"]},
+
+{pe:"PE-03",nome:"Refeitório Tacacá",lat:-5.999444,lon:-49.895458,
+ area:"Refeitório Tacacá",risco:"BAIXO",cls:"D-1",popFixa:18,
+ nec:2,quadro:9,ativos:9,venc:0,status:"CONFORME",
+ obs:"9 brigadistas (Chão Goiano). Superávit +7.",
+ cobre:[],cobertoPor:null,
+ areas:["Refeitório","Cozinha industrial"]},
+
+{pe:"PE-04",nome:"CCGEO (Litoteca)",lat:-6.000758,lon:-49.894892,
+ area:"Galpão de Testemunho",risco:"BAIXO",cls:"J-1",popFixa:8,
+ nec:2,quadro:6,ativos:6,venc:0,status:"CONFORME",
+ obs:"6 brigadistas. Superávit +4.",
+ cobre:[],cobertoPor:null,
+ areas:["Galpão de testemunho","Litoteca","Laboratório de solos"]},
+
+{pe:"PE-05",nome:"JSL (Base 01)",lat:-6.001942,lon:-49.896458,
+ area:"Base Motoristas JSL",risco:"BAIXO",cls:"D-1",popFixa:30,
+ nec:2,quadro:64,ativos:64,venc:0,status:"CONFORME",
+ obs:"64 brigadistas JSL. Grande superávit +62.",
+ cobre:["PE-06"],cobertoPor:null,
+ areas:["Base JSL","Pátio de caminhões","Moega (PE-06)"]},
+
+{pe:"PE-06",nome:"Moega",lat:-6.002350,lon:-49.896647,
+ area:"Base Motoristas JSL",risco:"BAIXO",cls:"D-1",popFixa:0,
+ nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
+ obs:"Coberto pelo PE-05 (JSL). Distância: ~50m.",
+ cobre:[],cobertoPor:"PE-05",
+ areas:["Moega de descarga"]},
+
+{pe:"PE-07",nome:"Cobre (Sossego)",lat:-6.001522,lon:-49.896822,
+ area:"Galpão do Cobre",risco:"MÉDIO",cls:"I-2",popFixa:15,
+ nec:2,quadro:6,ativos:1,venc:5,status:"ATENÇÃO",
+ obs:"5 VENCIDOS de 6. Apenas 1 ativo. Reciclagem URGENTE.",
+ cobre:["PE-08"],cobertoPor:null,
+ areas:["Galpão Concentrado Sossego","Galpão Salobo (PE-08)"]},
+
+{pe:"PE-08",nome:"Cobre (Salobo)",lat:-6.002394,lon:-49.897864,
+ area:"Galpão do Cobre",risco:"MÉDIO",cls:"I-2",popFixa:0,
+ nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
+ obs:"Coberto pelo PE-07 (Cobre). Distância: ~151m.",
+ cobre:[],cobertoPor:"PE-07",
+ areas:["Galpão Salobo"]},
+
+{pe:"PE-09",nome:"ETEI",lat:-6.002931,lon:-49.898247,
+ area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
+ nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
+ obs:"Coberto pelo PE-18 (Multiserv). Distância: ~98m.",
+ cobre:[],cobertoPor:"PE-18",
+ areas:["ETI do Cobre"]},
+
+{pe:"PE-10",nome:"ETA",lat:-6.004069,lon:-49.898611,
+ area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
+ nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
+ obs:"Coberto pelo PE-18. Ponto mais ao sul.",
+ cobre:[],cobertoPor:"PE-18",
+ areas:["ETA Água Potável"]},
+
+{pe:"PE-11",nome:"Subconjunto SLB",lat:-5.998804,lon:-49.899264,
+ area:"Níquel Operação",risco:"MÉDIO",cls:"I-2",popFixa:0,
+ nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
+ obs:"Coberto pelo PE-15 (Níquel). Distância: ~232m.",
+ cobre:[],cobertoPor:"PE-15",
+ areas:["Oficina Subconjunto Salobo"]},
+
+{pe:"PE-12",nome:"Heliponto",lat:-5.999042,lon:-49.900756,
+ area:"Dellavolpe",risco:"BAIXO",cls:"D-1",popFixa:0,
+ nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
+ obs:"Coberto pelo PE-14 (Della Volpe). Distância: ~117m.",
+ cobre:[],cobertoPor:"PE-14",
+ areas:["Heliponto"]},
+
+{pe:"PE-13",nome:"ETE",lat:-5.999150,lon:-49.901772,
+ area:"Dellavolpe",risco:"BAIXO",cls:"D-1",popFixa:0,
+ nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
+ obs:"Coberto pelo PE-14 (DV). Ponto extremo oeste.",
+ cobre:[],cobertoPor:"PE-14",
+ areas:["ETE Sanitária"]},
+
+{pe:"PE-14",nome:"Della Volpe",lat:-6.000050,lon:-49.900617,
+ area:"Dellavolpe",risco:"BAIXO",cls:"D-1",popFixa:25,
+ nec:2,quadro:7,ativos:0,venc:7,status:"CRÍTICO",
+ obs:"CRÍTICO: TODOS 7 VENCIDOS. Reciclagem URGENTE.",
+ cobre:["PE-12","PE-13","PE-16"],cobertoPor:null,
+ areas:["Base Della Volpe","Heliponto (PE-12)","ETE (PE-13)","Estac. Equipamentos (PE-16)"]},
+
+{pe:"PE-15",nome:"Galpão do Níquel",lat:-6.000783,lon:-49.899944,
+ area:"Níquel Operação",risco:"MÉDIO",cls:"I-2",popFixa:15,
+ nec:2,quadro:7,ativos:7,venc:0,status:"CONFORME",
+ obs:"7 brigadistas. Superávit +5. Área risco médio OK.",
+ cobre:["PE-11"],cobertoPor:null,
+ areas:["Galpão do Níquel","Subconjunto SLB (PE-11)"]},
+
+{pe:"PE-16",nome:"Estac. Equipamentos",lat:-6.002078,lon:-49.900150,
+ area:"Dellavolpe",risco:"BAIXO",cls:"D-1",popFixa:0,
+ nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
+ obs:"Coberto pelo PE-14 (Della Volpe).",
+ cobre:[],cobertoPor:"PE-14",
+ areas:["Estacionamento de equipamentos"]},
+
+{pe:"PE-17",nome:"Descarga Carvão",lat:-6.002736,lon:-49.898853,
+ area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
+ nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
+ obs:"Coberto pelo PE-18 (Multiserv). Distância: ~79m.",
+ cobre:[],cobertoPor:"PE-18",
+ areas:["Estação de Descarga de Carvão"]},
+
+{pe:"PE-18",nome:"Base Multiserv",lat:-6.002142,lon:-49.899406,
+ area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:20,
+ nec:2,quadro:6,ativos:6,venc:0,status:"CONFORME",
+ obs:"6 brigadistas. Superávit +4. Cobre 6 PEs adjacentes.",
+ cobre:["PE-09","PE-10","PE-17","PE-19","PE-20","PE-21"],cobertoPor:null,
+ areas:["Base Multiserv","ETEI (PE-09)","ETA (PE-10)","Desc. Carvão (PE-17)","Pátio Carvão (PE-19)","SHAFT (PE-20)","Pátio Materiais (PE-21)"]},
+
+{pe:"PE-19",nome:"Pátio Carvão",lat:-6.001450,lon:-49.899497,
+ area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
+ nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
+ obs:"Coberto pelo PE-18 (Multiserv).",
+ cobre:[],cobertoPor:"PE-18",
+ areas:["Pátio de Carvão"]},
+
+{pe:"PE-20",nome:"SHAFT",lat:-6.002331,lon:-49.898806,
+ area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
+ nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
+ obs:"Coberto pelo PE-18 (Multiserv).",
+ cobre:[],cobertoPor:"PE-18",
+ areas:["SHAFT"]},
+
+{pe:"PE-21",nome:"Pátio de Materiais",lat:-6.001478,lon:-49.899044,
+ area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
+ nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
+ obs:"Coberto pelo PE-18 (Multiserv).",
+ cobre:[],cobertoPor:"PE-18",
+ areas:["Pátio de Materiais"]},
+
+{pe:"PE-22",nome:"Subestação",lat:-6.000836,lon:-49.898669,
+ area:"Subestação Manutenção",risco:"ALTO",cls:"I-3",popFixa:5,
+ nec:2,quadro:0,ativos:0,venc:0,status:"COBERTO",
+ obs:"RISCO ALTO I-3. Coberto por PE-23 (19 brigadistas).",
+ cobre:[],cobertoPor:"PE-23",
+ areas:["Subestação elétrica"]},
+
+{pe:"PE-23",nome:"Escritório Central",lat:-6.000694,lon:-49.898503,
+ area:"Escritório Central Vale",risco:"BAIXO",cls:"D-1",popFixa:30,
+ nec:2,quadro:19,ativos:19,venc:0,status:"CONFORME",
+ obs:"19 brigadistas. Superávit +17. Cobre 5 áreas/prédios.",
+ cobre:["PE-22","PE-24"],cobertoPor:null,
+ areas:["Escritório Central","SESMT","Ferramentaria","Laboratório Elétrico","Subestação (PE-22)","Dojô (PE-24)"]},
+
+{pe:"PE-24",nome:"Dojô",lat:-6.000403,lon:-49.898219,
+ area:"Escritório Central Vale",risco:"BAIXO",cls:"D-1",popFixa:0,
+ nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
+ obs:"Coberto pelo PE-23 (Escritório). Distância: ~45m.",
+ cobre:[],cobertoPor:"PE-23",
+ areas:["Pátio Dojô"]},
+
+{pe:"PE-25",nome:"Base de Emergência",lat:-6.001447,lon:-49.900342,
+ area:"S.O.S.",risco:"BAIXO",cls:"D-1",popFixa:20,
+ nec:2,quadro:5,ativos:5,venc:0,status:"BASE",
+ obs:"5 brigadistas básicos + 15 Bombeiros Civis (Turnos A/B/C/D). Base principal de resposta a emergências para todo o terminal.",
+ cobre:[],cobertoPor:null,
+ areas:["Base de Emergência","Container Materiais","Ambulância","Viaturas (SE-11, HILUX)"]}
 ];
 
+const PEINDEX = {};
+DATA.forEach((d,i) => PEINDEX[d.pe] = i);
+
 function cor(s){
-  if(s==='OK') return '#4CAF50';
+  if(s==='CONFORME') return '#4CAF50';
   if(s==='CRÍTICO') return '#f44336';
   if(s==='ATENÇÃO') return '#FF9800';
-  if(s==='BASE') return '#2196F3';
+  if(s==='BASE') return '#1E88E5';
   return '#78909C';
+}
+
+function riscoCor(r){
+  if(r==='ALTO') return '#f44336';
+  if(r==='MÉDIO') return '#FF9800';
+  return '#4CAF50';
 }
 
 const map = L.map('map',{zoomControl:false}).setView([-6.001,-49.898],17);
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}).addTo(map);
 L.control.zoom({position:'bottomright'}).addTo(map);
 
+const markers = [];
+let covLines = [];
+let selectedIdx = -1;
+
 DATA.forEach((d,i) => {
   const c = cor(d.status);
-  const hasBrig = d.ativos > 0;
-  const sz = hasBrig ? (d.ativos > 50 ? 42 : d.ativos > 15 ? 36 : d.ativos > 5 ? 30 : 26) : 20;
   const num = d.pe.replace('PE-','');
 
   const icon = L.divIcon({
     className:'pe-marker',
-    iconSize:[sz+16, sz+20],
-    iconAnchor:[(sz+16)/2, sz/2],
-    html:`<div class="pe-icon">
-      <div class="pe-circle" style="width:${sz}px;height:${sz}px;background:${c};font-size:${sz>30?13:11}px">${num}</div>
-      <div class="pe-label">${d.nome}</div>
+    iconSize:[80, 50],
+    iconAnchor:[40, 50],
+    html:`<div class="pin-wrap" id="pin-${i}">
+      <div class="pin-head" style="background:${c}">${d.pe}</div>
+      <div class="pin-arrow" style="border-top:8px solid ${c}"></div>
+      <div class="pin-label">${d.nome}</div>
     </div>`
   });
 
-  L.marker([d.lat,d.lon],{icon}).addTo(map).on('click',()=>showInfo(i));
+  const m = L.marker([d.lat,d.lon],{icon}).addTo(map).on('click',()=>showInfo(i));
+  markers.push(m);
 });
 
-function showInfo(i){
-  const d = DATA[i];
-  const panel = document.getElementById('infoPanel');
-  panel.style.display = 'block';
-  document.getElementById('infoTitle').textContent = d.pe + ' — ' + d.nome;
-  document.getElementById('infoLocal').textContent = d.obs;
-  document.getElementById('infoStatus').innerHTML =
-    `<div class="info-status" style="background:${cor(d.status)};color:#fff">${d.status}</div>`;
-
-  let rows = '';
-  if(d.nec > 0){
-    rows += `<div class="info-row"><span class="lbl">Necessários</span><span class="val">${d.nec}</span></div>`;
-    rows += `<div class="info-row"><span class="lbl">Ativos</span><span class="val" style="color:${d.ativos>=d.nec?'#4CAF50':'#f44336'}">${d.ativos}</span></div>`;
-    if(d.venc > 0) rows += `<div class="info-row"><span class="lbl">Vencidos</span><span class="val" style="color:#FF9800">${d.venc}</span></div>`;
-    const saldo = d.ativos - d.nec;
-    rows += `<div class="info-row"><span class="lbl">Saldo</span><span class="val" style="color:${saldo>=0?'#4CAF50':'#f44336'}">${saldo>=0?'+':''}${saldo}</span></div>`;
+function clearCoverage(){
+  covLines.forEach(l => map.removeLayer(l));
+  covLines = [];
+  if(selectedIdx >= 0){
+    const pin = document.getElementById('pin-'+selectedIdx);
+    if(pin) pin.style.filter = '';
   }
-  document.getElementById('infoRows').innerHTML = rows;
 }
 
-function fitAll(){map.fitBounds(L.latLngBounds(DATA.map(d=>[d.lat,d.lon])).pad(0.12));}
+function showInfo(i){
+  clearCoverage();
+  selectedIdx = i;
+  const d = DATA[i];
+  const panel = document.getElementById('panel');
+  panel.style.display = 'block';
+
+  document.getElementById('pTitle').textContent = d.pe + ' — ' + d.nome;
+  document.getElementById('pSub').textContent = d.area + ' | ' + d.cls + ' | Risco ' + d.risco;
+
+  const sColor = cor(d.status);
+  const statusLabel = d.status === 'COBERTO' ? 'COBERTO POR ' + d.cobertoPor :
+                      d.status === 'SEM QUADRO' ? 'SEM QUADRO' : d.status;
+  document.getElementById('pStatus').innerHTML =
+    `<div class="panel-status" style="background:${sColor};color:#fff">${statusLabel}</div>
+     <span class="panel-status" style="background:${riscoCor(d.risco)};color:#fff;margin-left:6px">${d.risco}</span>`;
+
+  let html = '';
+
+  // Efetivo
+  html += '<div class="panel-section"><h3>EFETIVO IT08</h3>';
+  if(d.pe === 'PE-25'){
+    html += '<div class="pr"><span class="k">Brigadistas básicos</span><span class="v" style="color:#4CAF50">5</span></div>';
+    html += '<div class="pr"><span class="k">Bombeiros Civis (4 turnos)</span><span class="v" style="color:#1E88E5">15</span></div>';
+    html += '<div class="pr"><span class="k">Total na base</span><span class="v" style="color:#FFD600">20</span></div>';
+  } else if(d.nec > 0){
+    html += `<div class="pr"><span class="k">Necessários (IT08)</span><span class="v">${d.nec}</span></div>`;
+    html += `<div class="pr"><span class="k">No quadro</span><span class="v">${d.quadro}</span></div>`;
+    html += `<div class="pr"><span class="k">Ativos</span><span class="v" style="color:${d.ativos>=d.nec?'#4CAF50':'#f44336'}">${d.ativos}</span></div>`;
+    if(d.venc > 0) html += `<div class="pr"><span class="k">Vencidos</span><span class="v" style="color:#FF9800">${d.venc}</span></div>`;
+    const saldo = d.ativos - d.nec;
+    html += `<div class="pr"><span class="k">Saldo</span><span class="v" style="color:${saldo>=0?'#4CAF50':'#f44336'}">${saldo>=0?'+':''}${saldo}</span></div>`;
+  } else {
+    html += `<div style="font-size:11px;color:#aaa;padding:4px 0">${d.obs}</div>`;
+  }
+  if(d.popFixa > 0) html += `<div class="pr"><span class="k">Pop. fixa estimada</span><span class="v">${d.popFixa}</span></div>`;
+  html += '</div>';
+
+  // Áreas cobertas
+  html += '<div class="panel-section"><h3>ÁREAS COBERTAS</h3>';
+  d.areas.forEach(a => {
+    html += `<div class="cov-area">• ${a}</div>`;
+  });
+  html += '</div>';
+
+  // PEs que este cobre
+  if(d.cobre.length > 0){
+    html += '<div class="panel-section"><h3>PEs SOB COBERTURA</h3><div>';
+    d.cobre.forEach(pe => {
+      const ci = PEINDEX[pe];
+      const cd = DATA[ci];
+      html += `<span class="cov-tag">${pe} ${cd.nome}</span>`;
+    });
+    html += '</div></div>';
+
+    // Desenhar linhas de cobertura
+    d.cobre.forEach(pe => {
+      const ci = PEINDEX[pe];
+      const cd = DATA[ci];
+      const line = L.polyline(
+        [[d.lat,d.lon],[cd.lat,cd.lon]],
+        {color:'#FFD600',weight:2.5,dashArray:'6,4',opacity:0.8}
+      ).addTo(map);
+      const dist = Math.round(map.distance([d.lat,d.lon],[cd.lat,cd.lon]));
+      line.bindTooltip(dist+'m',{permanent:true,direction:'center',
+        className:'pin-label',offset:[0,-8]});
+      covLines.push(line);
+    });
+  }
+
+  // Se é coberto por outro PE
+  if(d.cobertoPor){
+    const ci = PEINDEX[d.cobertoPor];
+    const cd = DATA[ci];
+    html += `<div class="panel-section"><h3>COBERTO POR</h3>`;
+    html += `<span class="cov-tag" style="font-size:12px;padding:4px 12px">${d.cobertoPor} — ${cd.nome} (${cd.ativos} ativos)</span>`;
+    html += '</div>';
+
+    const line = L.polyline(
+      [[d.lat,d.lon],[cd.lat,cd.lon]],
+      {color:'#FFD600',weight:2.5,dashArray:'6,4',opacity:0.8}
+    ).addTo(map);
+    const dist = Math.round(map.distance([d.lat,d.lon],[cd.lat,cd.lon]));
+    line.bindTooltip(dist+'m',{permanent:true,direction:'center',
+      className:'pin-label',offset:[0,-8]});
+    covLines.push(line);
+  }
+
+  document.getElementById('pContent').innerHTML = html;
+
+  // Highlight pin selecionado
+  const pin = document.getElementById('pin-'+i);
+  if(pin) pin.style.filter = 'drop-shadow(0 0 8px #FFD600)';
+}
+
+function closePanel(){
+  document.getElementById('panel').style.display='none';
+  clearCoverage();
+  selectedIdx = -1;
+}
+
+function fitAll(){
+  map.fitBounds(L.latLngBounds(DATA.map(d=>[d.lat,d.lon])).pad(0.12));
+}
 fitAll();
+
+map.on('click', function(e){
+  if(e.originalEvent.target === map.getContainer() ||
+     e.originalEvent.target.classList.contains('leaflet-tile')){
+    closePanel();
+  }
+});
 </script>
 </body>
 </html>
