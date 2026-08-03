@@ -95,6 +95,12 @@ body{font-family:Arial,sans-serif;background:#111}
   cursor:pointer;font-size:12px;width:100%;font-weight:600;
 }
 .close-btn:hover{background:rgba(255,214,0,0.2)}
+.lei-box{
+  background:rgba(255,214,0,0.08);border:1px solid rgba(255,214,0,0.15);
+  border-radius:6px;padding:8px 10px;margin:4px 0;font-size:10px;line-height:1.5;
+}
+.lei-box b{color:#FFD600;font-size:10px}
+.lei-box span{color:#ccc}
 
 .btn-fit{
   position:fixed;bottom:12px;right:12px;z-index:1000;
@@ -459,6 +465,80 @@ function showInfo(i){
       className:'pin-label',offset:[0,-8]});
     covLines.push(line);
   }
+
+  // RESPALDO LEGAL
+  html += '<div class="panel-section"><h3>RESPALDO LEGAL</h3>';
+
+  // IT08 - sempre
+  const clsDesc = {
+    'D-1':'Depósitos com carga de incêndio até 300 MJ/m²',
+    'D-2':'Depósitos com carga de incêndio acima de 300 MJ/m²',
+    'I-1':'Industrial de risco baixo (incêndio leve)',
+    'I-2':'Industrial de risco moderado (incêndio médio)',
+    'I-3':'Industrial de risco alto (incêndio elevado)',
+    'J-1':'Depósitos de materiais incombustíveis'
+  };
+
+  html += `<div class="lei-box">
+    <b>IT-08 CBMPA</b> — Brigada de Incêndio<br>
+    <span>Classificação: <b style="color:#fff">${d.cls}</b> — ${clsDesc[d.cls]||d.cls}</span><br>
+    <span>Art. 5.2: Dimensionamento mín. ${d.nec > 0 ? d.nec + ' brigadistas p/ esta ocupação' : 'coberto por PE adjacente conforme § 5.2.4'}</span>
+  </div>`;
+
+  // NBR 14276
+  html += `<div class="lei-box">
+    <b>NBR 14276:2020</b> — Brigada de emergência<br>
+    <span>Define formação, reciclagem anual e composição da brigada.${d.venc > 0 ? ' <b style="color:#FF9800">⚠ ' + d.venc + ' membro(s) com reciclagem vencida.</b>' : ''}</span>
+  </div>`;
+
+  // NR-23
+  html += `<div class="lei-box">
+    <b>NR-23</b> — Proteção contra incêndios<br>
+    <span>Obriga saídas de emergência, sinalização e equipamentos de combate em todos os locais de trabalho.</span>
+  </div>`;
+
+  // Específicas por risco/tipo
+  if(d.risco === 'ALTO' || d.cls === 'I-3'){
+    html += `<div class="lei-box">
+      <b>NR-10</b> — Segurança em instalações elétricas<br>
+      <span>Área de risco elétrico elevado. Exige medidas de controle e brigadistas aptos a atuar em emergência elétrica.</span>
+    </div>`;
+  }
+
+  if(d.risco === 'MÉDIO' || d.cls === 'I-2'){
+    html += `<div class="lei-box">
+      <b>NR-20</b> — Inflamáveis e combustíveis<br>
+      <span>Área com risco moderado. Brigadistas devem ter treinamento complementar para produtos perigosos.</span>
+    </div>`;
+  }
+
+  if(d.pe === 'PE-25'){
+    html += `<div class="lei-box">
+      <b>Lei 11.901/2009</b> — Bombeiro Civil<br>
+      <span>15 profissionais em regime de turno (A/B/C/D). Formação mín. 210h. Complementam a brigada básica conforme IT08 § 5.1.2.</span>
+    </div>`;
+    html += `<div class="lei-box">
+      <b>NBR 14608:2007</b> — Bombeiro Civil<br>
+      <span>Define requisitos, atribuições e equipamentos do bombeiro profissional civil.</span>
+    </div>`;
+  }
+
+  // Cobertura conjunta
+  if(d.cobre.length > 0){
+    html += `<div class="lei-box">
+      <b>IT-08 § 5.2.4</b> — Cobertura conjunta<br>
+      <span>Permite que áreas adjacentes de mesma classificação compartilhem brigada, desde que o tempo de deslocamento permita atendimento eficaz. Este PE cobre ${d.cobre.length} ponto(s) adjacente(s).</span>
+    </div>`;
+  }
+
+  if(d.cobertoPor){
+    html += `<div class="lei-box">
+      <b>IT-08 § 5.2.4</b> — Ponto sob cobertura<br>
+      <span>Este ponto é atendido pelo ${d.cobertoPor} por proximidade geográfica e classificação compatível.</span>
+    </div>`;
+  }
+
+  html += '</div>';
 
   document.getElementById('pContent').innerHTML = html;
 
