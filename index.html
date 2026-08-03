@@ -117,7 +117,7 @@ body{font-family:Arial,sans-serif;background:#111}
 <h1>COBERTURA DE BRIGADA — IT08 CBMPA</h1>
 <p>Terminal de Parauapebas (ETP) — Vale Metais Básicos</p>
 <div class="nums">
-  <div class="nb"><div class="nb-v">25</div><div class="nb-l">Pontos de Encontro</div></div>
+  <div class="nb"><div class="nb-v">24</div><div class="nb-l">Pontos de Encontro</div></div>
   <div class="nb"><div class="nb-v">119</div><div class="nb-l">Brigadistas Básicos</div></div>
   <div class="nb"><div class="nb-v">15</div><div class="nb-l">Bombeiros Civis</div></div>
   <div class="nb"><div class="nb-v" style="color:#4CAF50">+95</div><div class="nb-l">Superávit IT08</div></div>
@@ -150,30 +150,23 @@ body{font-family:Arial,sans-serif;background:#111}
 <script>
 const DATA = [
 {pe:"PE-01",nome:"Portaria Principal",lat:-5.999114,lon:-49.895811,
- area:"Portaria Principal",risco:"BAIXO",cls:"D-1",popFixa:12,
+ area:"Portaria Principal",risco:"BAIXO",cls:"D-1",popFixa:4,
  nec:2,quadro:2,ativos:2,venc:0,status:"CONFORME",
- obs:"2 brigadistas ativos. Conforme IT08.",
+ obs:"2 brigadistas ativos. Máx. 4 pessoas/turno (regime de turnos). Conforme IT08.",
  cobre:[],cobertoPor:null,
  areas:["Portaria","Balança rodoviária"]},
 
-{pe:"PE-02",nome:"Rodoviária",lat:-5.998844,lon:-49.896492,
- area:"Portaria Principal",risco:"BAIXO",cls:"D-1",popFixa:5,
- nec:2,quadro:0,ativos:0,venc:0,status:"SEM QUADRO",
- obs:"Sem quadro próprio de brigada.",
- cobre:[],cobertoPor:null,
- areas:["Terminal rodoviário"]},
-
 {pe:"PE-03",nome:"Refeitório Tacacá",lat:-5.999444,lon:-49.895458,
- area:"Refeitório Tacacá",risco:"BAIXO",cls:"D-1",popFixa:18,
+ area:"Refeitório Tacacá",risco:"BAIXO",cls:"D-1",popFixa:15,
  nec:2,quadro:9,ativos:9,venc:0,status:"CONFORME",
  obs:"9 brigadistas (Chão Goiano). Superávit +7.",
  cobre:[],cobertoPor:null,
  areas:["Refeitório","Cozinha industrial"]},
 
 {pe:"PE-04",nome:"CCGEO (Litoteca)",lat:-6.000758,lon:-49.894892,
- area:"Galpão de Testemunho",risco:"BAIXO",cls:"J-1",popFixa:8,
+ area:"Galpão de Testemunho",risco:"BAIXO",cls:"J-1",popFixa:30,
  nec:2,quadro:6,ativos:6,venc:0,status:"CONFORME",
- obs:"6 brigadistas. Superávit +4.",
+ obs:"6 brigadistas. Superávit +4. Pop. fixa ~30 por turno.",
  cobre:[],cobertoPor:null,
  areas:["Galpão de testemunho","Litoteca","Laboratório de solos"]},
 
@@ -248,9 +241,9 @@ const DATA = [
  areas:["Base Della Volpe","Heliponto (PE-12)","ETE (PE-13)","Estac. Equipamentos (PE-16)"]},
 
 {pe:"PE-15",nome:"Galpão do Níquel",lat:-6.000783,lon:-49.899944,
- area:"Níquel Operação",risco:"MÉDIO",cls:"I-2",popFixa:15,
+ area:"Níquel Operação",risco:"MÉDIO",cls:"I-2",popFixa:8,
  nec:2,quadro:7,ativos:7,venc:0,status:"CONFORME",
- obs:"7 brigadistas. Superávit +5. Área risco médio OK.",
+ obs:"7 brigadistas. Superávit +5. Pop. fixa ~8 por turno.",
  cobre:["PE-11"],cobertoPor:null,
  areas:["Galpão do Níquel","Subconjunto SLB (PE-11)"]},
 
@@ -471,72 +464,39 @@ function showInfo(i){
 
   // IT08 - sempre
   const clsDesc = {
-    'D-1':'Depósitos com carga de incêndio até 300 MJ/m²',
-    'D-2':'Depósitos com carga de incêndio acima de 300 MJ/m²',
-    'I-1':'Industrial de risco baixo (incêndio leve)',
-    'I-2':'Industrial de risco moderado (incêndio médio)',
-    'I-3':'Industrial de risco alto (incêndio elevado)',
-    'J-1':'Depósitos de materiais incombustíveis'
+    'D-1':'Serviços profissionais (escritórios, salas técnicas)',
+    'D-2':'Oficinas e serviços de reparos',
+    'I-1':'Industrial — risco baixo',
+    'I-2':'Industrial — risco moderado',
+    'I-3':'Industrial — risco alto (elétrico/químico)',
+    'J-1':'Depósito de materiais incombustíveis'
   };
 
-  html += `<div class="lei-box">
-    <b>IT-08 CBMPA</b> — Brigada de Incêndio<br>
-    <span>Classificação: <b style="color:#fff">${d.cls}</b> — ${clsDesc[d.cls]||d.cls}</span><br>
-    <span>Art. 5.2: Dimensionamento mín. ${d.nec > 0 ? d.nec + ' brigadistas p/ esta ocupação' : 'coberto por PE adjacente conforme § 5.2.4'}</span>
-  </div>`;
+  html += '<div class="lei-box"><b>IT-08 CBMPA</b> · Classificação <b style="color:#FFD600">' + d.cls + '</b> — ' + (clsDesc[d.cls]||d.cls) + '<br>';
+  if(d.nec > 0) html += 'Mín. <b>' + d.nec + '</b> brigadistas · ';
+  else html += 'Coberto por PE adjacente (§ 5.2.4) · ';
+  html += '<b>NBR 14276</b> reciclagem anual';
+  if(d.venc > 0) html += ' · <b style="color:#FF9800">⚠ ' + d.venc + ' vencido(s)</b>';
+  html += '</div>';
 
-  // NBR 14276
-  html += `<div class="lei-box">
-    <b>NBR 14276:2020</b> — Brigada de emergência<br>
-    <span>Define formação, reciclagem anual e composição da brigada.${d.venc > 0 ? ' <b style="color:#FF9800">⚠ ' + d.venc + ' membro(s) com reciclagem vencida.</b>' : ''}</span>
-  </div>`;
+  // NR-23 sempre
+  html += '<div class="lei-box"><b>NR-23</b> · Saídas de emergência, sinalização e combate a incêndio</div>';
 
-  // NR-23
-  html += `<div class="lei-box">
-    <b>NR-23</b> — Proteção contra incêndios<br>
-    <span>Obriga saídas de emergência, sinalização e equipamentos de combate em todos os locais de trabalho.</span>
-  </div>`;
+  // NR específicas (só quando aplica)
+  if(d.risco === 'ALTO' || d.cls === 'I-3')
+    html += '<div class="lei-box"><b>NR-10</b> · Risco elétrico elevado — controle especial</div>';
 
-  // Específicas por risco/tipo
-  if(d.risco === 'ALTO' || d.cls === 'I-3'){
-    html += `<div class="lei-box">
-      <b>NR-10</b> — Segurança em instalações elétricas<br>
-      <span>Área de risco elétrico elevado. Exige medidas de controle e brigadistas aptos a atuar em emergência elétrica.</span>
-    </div>`;
-  }
+  if(d.risco === 'MÉDIO' || d.cls === 'I-2')
+    html += '<div class="lei-box"><b>NR-20</b> · Risco moderado — treinamento p/ produtos perigosos</div>';
 
-  if(d.risco === 'MÉDIO' || d.cls === 'I-2'){
-    html += `<div class="lei-box">
-      <b>NR-20</b> — Inflamáveis e combustíveis<br>
-      <span>Área com risco moderado. Brigadistas devem ter treinamento complementar para produtos perigosos.</span>
-    </div>`;
-  }
+  if(d.pe === 'PE-25')
+    html += '<div class="lei-box"><b>Lei 11.901</b> + <b>NBR 14608</b> · 15 BM Civis (4 turnos, formação 210h)</div>';
 
-  if(d.pe === 'PE-25'){
-    html += `<div class="lei-box">
-      <b>Lei 11.901/2009</b> — Bombeiro Civil<br>
-      <span>15 profissionais em regime de turno (A/B/C/D). Formação mín. 210h. Complementam a brigada básica conforme IT08 § 5.1.2.</span>
-    </div>`;
-    html += `<div class="lei-box">
-      <b>NBR 14608:2007</b> — Bombeiro Civil<br>
-      <span>Define requisitos, atribuições e equipamentos do bombeiro profissional civil.</span>
-    </div>`;
-  }
+  if(d.cobre.length > 0)
+    html += '<div class="lei-box"><b>§ 5.2.4</b> · Cobertura conjunta — cobre ' + d.cobre.length + ' PE(s) adjacente(s)</div>';
 
-  // Cobertura conjunta
-  if(d.cobre.length > 0){
-    html += `<div class="lei-box">
-      <b>IT-08 § 5.2.4</b> — Cobertura conjunta<br>
-      <span>Permite que áreas adjacentes de mesma classificação compartilhem brigada, desde que o tempo de deslocamento permita atendimento eficaz. Este PE cobre ${d.cobre.length} ponto(s) adjacente(s).</span>
-    </div>`;
-  }
-
-  if(d.cobertoPor){
-    html += `<div class="lei-box">
-      <b>IT-08 § 5.2.4</b> — Ponto sob cobertura<br>
-      <span>Este ponto é atendido pelo ${d.cobertoPor} por proximidade geográfica e classificação compatível.</span>
-    </div>`;
-  }
+  if(d.cobertoPor)
+    html += '<div class="lei-box"><b>§ 5.2.4</b> · Coberto pelo ' + d.cobertoPor + '</div>';
 
   html += '</div>';
 
