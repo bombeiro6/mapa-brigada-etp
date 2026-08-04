@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestão de Brigada e Pontos de Encontro — ETP Parauapebas</title>
+<title>Cobertura de Brigada IT08 — ETP Parauapebas</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -12,16 +12,10 @@ body{font-family:Arial,sans-serif;background:#111}
 #map{width:100%;height:100vh}
 
 .title-bar{
-  position:fixed;top:24px;left:50%;transform:translateX(-50%);
+  position:fixed;top:0;left:50%;transform:translateX(-50%);
   background:rgba(0,58,112,0.95);color:#fff;padding:10px 24px;
   border-radius:0 0 12px 12px;z-index:1000;text-align:center;
   backdrop-filter:blur(8px);border-bottom:3px solid #FFD600;
-}
-.privacy-bar{
-  position:fixed;top:0;left:0;right:0;height:24px;z-index:1002;
-  display:flex;align-items:center;justify-content:center;
-  background:#9b1c1c;color:#fff;font-size:10px;font-weight:800;
-  letter-spacing:1px;text-transform:uppercase;
 }
 .title-bar h1{font-size:13px;color:#FFD600;letter-spacing:1.5px}
 .title-bar p{font-size:10px;color:#ccc;margin-top:2px}
@@ -31,7 +25,7 @@ body{font-family:Arial,sans-serif;background:#111}
 .title-bar .nb-l{font-size:8px;color:#aaa;text-transform:uppercase;letter-spacing:0.5px}
 
 .legend{
-  position:fixed;bottom:12px;left:12px;
+  position:fixed;bottom:30px;left:12px;
   background:rgba(0,30,60,0.94);color:#fff;padding:12px 16px;
   border-radius:10px;font-size:11px;z-index:1000;
   border:1px solid rgba(255,214,0,0.2);
@@ -40,9 +34,15 @@ body{font-family:Arial,sans-serif;background:#111}
 .lg-i{display:flex;align-items:center;gap:8px;margin:4px 0}
 .lg-d{width:12px;height:12px;border-radius:2px;flex-shrink:0}
 
+.privacy-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(0,30,60,0.95);color:#aaa;
+  font-size:9px;text-align:center;padding:4px 12px;
+  z-index:1000;border-top:1px solid rgba(255,214,0,0.15);
+}
+
 .pe-marker{background:none;border:none}
 
-/* PIN flutuante */
 .pin-wrap{display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.2s}
 .pin-wrap:hover{transform:translateY(-4px)}
 .pin-head{
@@ -59,7 +59,6 @@ body{font-family:Arial,sans-serif;background:#111}
   overflow:hidden;text-overflow:ellipsis;
 }
 
-/* Painel lateral */
 .panel{
   position:fixed;top:50%;right:14px;transform:translateY(-50%);
   background:rgba(0,30,60,0.96);color:#fff;
@@ -109,49 +108,39 @@ body{font-family:Arial,sans-serif;background:#111}
 .lei-box span{color:#ccc}
 
 .btn-fit{
-  position:fixed;bottom:12px;right:12px;z-index:1000;
+  position:fixed;bottom:30px;right:12px;z-index:1000;
   background:rgba(0,30,60,0.95);color:#FFD600;
   border:1px solid rgba(255,214,0,0.3);
   padding:8px 14px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;
-}
-.data-note{font-size:10px;color:#aeb8c2;line-height:1.45;margin-top:7px}
-.warning-box{background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.35);color:#ffd39b;padding:8px 10px;border-radius:6px;font-size:10px;line-height:1.45;margin-top:8px}
-
-@media (max-width:720px){
-  .title-bar{top:24px;width:calc(100% - 16px);padding:8px 10px}
-  .title-bar h1{font-size:11px}.title-bar p{font-size:9px}
-  .title-bar .nums{gap:10px;flex-wrap:wrap}.title-bar .nb-v{font-size:16px}
-  .legend{left:8px;bottom:8px;max-width:210px;padding:9px 10px;font-size:9px}
-  .panel{right:6px;left:6px;width:auto;top:auto;bottom:6px;transform:none;max-height:72vh}
-  .btn-fit{right:8px;bottom:8px}
 }
 </style>
 </head>
 <body>
 <div id="map"></div>
 
-<div class="privacy-bar">Uso interno • dados operacionais • não publicar sem autorização</div>
-
 <div class="title-bar">
-<h1>GESTÃO DE BRIGADA E PONTOS DE ENCONTRO</h1>
-<p>Terminal de Parauapebas (ETP) • Base: Brigada.xlsx • Referência: 03/08/2026</p>
+<h1>COBERTURA DE BRIGADA — IT08 CBMPA</h1>
+<p>Terminal de Parauapebas (ETP) — Vale Metais Basicos</p>
 <div class="nums">
   <div class="nb"><div class="nb-v">24</div><div class="nb-l">Pontos de Encontro</div></div>
-  <div class="nb"><div class="nb-v">111</div><div class="nb-l">Registros na planilha</div></div>
-  <div class="nb"><div class="nb-v" style="color:#4CAF50">85</div><div class="nb-l">Treinamentos vigentes</div></div>
-  <div class="nb"><div class="nb-v" style="color:#f44336">23</div><div class="nb-l">Vencidos</div></div>
-  <div class="nb"><div class="nb-v" style="color:#FF9800">3</div><div class="nb-l">Treinamentos futuros</div></div>
+  <div class="nb"><div class="nb-v" id="nReg">—</div><div class="nb-l">Registros</div></div>
+  <div class="nb"><div class="nb-v" id="nVig" style="color:#4CAF50">—</div><div class="nb-l">Vigentes</div></div>
+  <div class="nb"><div class="nb-v" id="nVenc" style="color:#FF9800">—</div><div class="nb-l">Vencidos</div></div>
+  <div class="nb"><div class="nb-v" id="nFut" style="color:#90CAF9">—</div><div class="nb-l">Futuros</div></div>
 </div>
 </div>
 
 <div class="legend">
-<h3>SITUAÇÃO PRELIMINAR</h3>
-<div class="lg-i"><div class="lg-d" style="background:#4CAF50"></div> Quantitativo preliminar atendido</div>
-<div class="lg-i"><div class="lg-d" style="background:#FF9800"></div> Atenção — turno, prazo ou classificação</div>
-<div class="lg-i"><div class="lg-d" style="background:#f44336"></div> Crítico — déficit ou sem vigente</div>
-<div class="lg-i"><div class="lg-d" style="background:#1E88E5"></div> Base de Emergência (BM Civis)</div>
-<div class="lg-i"><div class="lg-d" style="background:#616161"></div> Dados não conciliados</div>
-<div class="data-note">Qualidade da base: 1 CPF duplicado, 2 registros sem local e 3 treinamentos com data futura a conferir.</div>
+<h3>SITUACAO IT08</h3>
+<div class="lg-i"><div class="lg-d" style="background:#4CAF50"></div> Atendimento preliminar — vigentes >= necessarios</div>
+<div class="lg-i"><div class="lg-d" style="background:#FF9800"></div> Atencao — brigadistas com curso vencido</div>
+<div class="lg-i"><div class="lg-d" style="background:#f44336"></div> Critico — todos vencidos ou deficit</div>
+<div class="lg-i"><div class="lg-d" style="background:#1E88E5"></div> Base de Emergencia (BM Civis)</div>
+<div class="lg-i"><div class="lg-d" style="background:#78909C"></div> Area relacionada a PE adjacente</div>
+</div>
+
+<div class="privacy-bar">
+  <span id="csvStatus">Carregando dados da planilha...</span> &middot; Dados anonimos — sem nome, CPF ou telefone
 </div>
 
 <button class="btn-fit" onclick="fitAll()">Ver tudo</button>
@@ -169,347 +158,535 @@ body{font-family:Arial,sans-serif;background:#111}
 </div>
 
 <script>
-const DATA = [
+var CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAoCvVVGSojGI5wYDn-HJTuyRdOxCw0yHA-rdOV90P7FCxw_hJ8iGiz_hgGaogeBCvvYcAJvpvPjNH/pub?gid=217989385&single=true&output=csv';
+
+var DATA = [
 {pe:"PE-01",nome:"Portaria Principal",lat:-5.999114,lon:-49.895811,
  area:"Portaria Principal",risco:"BAIXO",cls:"D-1",popFixa:4,
- nec:2,quadro:1,ativos:1,venc:0,futuro:0,status:"CRÍTICO",
- obs:"Planilha: 1 treinamento vigente, somente turno B/noturno. Não há cobertura diurna comprovada.",
- turnos:"Vigentes: B/noturno = 1",fonte:"Brigada.xlsx — PORTARIA PRINCIPAL",
+ nec:2,quadro:2,ativos:2,venc:0,futuros:0,status:"REGULAR",
+ obs:"2 brigadistas ativos. Max. 4 pessoas/turno (regime de turnos).",
  cobre:[],cobertoPor:null,
- areas:["Portaria","Balança rodoviária"]},
+ areas:["Portaria","Balanca rodoviaria"]},
 
-{pe:"PE-03",nome:"Refeitório Tacacá",lat:-5.999444,lon:-49.895458,
- area:"Refeitório Tacacá",risco:"BAIXO",cls:"F-8",popFixa:15,
- nec:5,quadro:4,ativos:1,venc:1,futuro:2,status:"CRÍTICO",
- obs:"Uso corrigido para F-8 (local para refeição). Há 1 vigente, 1 vencido e 2 treinamentos com data futura; não contar os futuros antes da conclusão.",
- turnos:"Vigente: ADM/diurno = 1",fonte:"Brigada.xlsx — REFEITÓRIO TACACÁ",
+{pe:"PE-03",nome:"Refeitorio Tacaca",lat:-5.999444,lon:-49.895458,
+ area:"Refeitorio Tacaca",risco:"BAIXO",cls:"D-1",popFixa:15,
+ nec:2,quadro:9,ativos:9,venc:0,futuros:0,status:"REGULAR",
+ obs:"9 brigadistas (Chao Goiano). Saldo preliminar +7.",
  cobre:[],cobertoPor:null,
- areas:["Refeitório","Cozinha industrial"]},
+ areas:["Refeitorio","Cozinha industrial"]},
 
 {pe:"PE-04",nome:"CCGEO (Litoteca)",lat:-6.000758,lon:-49.894892,
- area:"Galpão de Testemunho",risco:"BAIXO",cls:"J-1",popFixa:30,
- nec:3,quadro:11,ativos:11,venc:0,futuro:0,status:"ATENÇÃO",
- obs:"11 treinamentos vigentes, todos ADM/diurno. Confirmar se J-1 é válido: testemunhos, embalagens, mobiliário e laboratório podem alterar a carga de incêndio.",
- turnos:"Vigentes: ADM/diurno = 11",fonte:"Brigada.xlsx — GALPÃO DE TESTEMUNHO",
+ area:"Galpao de Testemunho",risco:"BAIXO",cls:"J-1",popFixa:30,
+ nec:2,quadro:6,ativos:6,venc:0,futuros:0,status:"REGULAR",
+ obs:"6 brigadistas. Saldo preliminar +4. Pop. fixa ~30 por turno.",
  cobre:[],cobertoPor:null,
- areas:["Galpão de testemunho","Litoteca","Laboratório de solos"]},
+ areas:["Galpao de testemunho","Litoteca","Laboratorio de solos"]},
 
 {pe:"PE-05",nome:"JSL (Base 01)",lat:-6.001942,lon:-49.896458,
  area:"Base Motoristas JSL",risco:"BAIXO",cls:"D-1",popFixa:30,
- nec:3,quadro:31,ativos:10,venc:21,futuro:0,status:"ATENÇÃO",
- obs:"31 registros: 10 vigentes e 21 vencidos. Os 10 vigentes vencem entre 23 e 30/08/2026; programar atualização imediata.",
- turnos:"Vigentes: diurno = 1; noturno = 9",fonte:"Brigada.xlsx — BASE MOTORISTAS JSL",
- cobre:[],cobertoPor:null,
- areas:["Base JSL","Pátio de caminhões","Moega (PE-06)"]},
+ nec:2,quadro:64,ativos:64,venc:0,futuros:0,status:"REGULAR",
+ obs:"64 brigadistas JSL. Saldo preliminar +62.",
+ cobre:["PE-06"],cobertoPor:null,
+ areas:["Base JSL","Patio de caminhoes","Moega (PE-06)"]},
 
 {pe:"PE-06",nome:"Moega",lat:-6.002350,lon:-49.896647,
  area:"Base Motoristas JSL",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
- obs:"A proximidade do PE-05 não comprova cobertura legal. Informar população por turno, ocupação, brigadistas designados e rota real.",
- fonte:"Sem correspondência específica na planilha",cobre:[],cobertoPor:null,
+ nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
+ obs:"Area relacionada ao PE-05 (JSL). Distancia: ~50m.",
+ cobre:[],cobertoPor:"PE-05",
  areas:["Moega de descarga"]},
 
-{pe:"PE-07",nome:"Administrativo Cobre",lat:-6.001522,lon:-49.896822,
- area:"Prédio Administrativo do Cobre",risco:"BAIXO",cls:"D-1",popFixa:15,
- nec:3,quadro:1,ativos:0,venc:1,futuro:0,status:"CRÍTICO",
- obs:"Uso informado: salas administrativas no piso superior; banheiros e sala de apresentação no piso inferior. A planilha possui 1 brigadista vinculado ao GALPÃO DO COBRE, vencido em 09/05/2026. Necessidade preliminar D-1/baixo: 3. Validar capacidade e uso da sala de apresentação; se funcionar como auditório/reunião de público, reclassificar e recalcular.",
- turnos:"Nenhum treinamento vigente; registro existente: ADM/diurno, vencido",fonte:"Brigada.xlsx — GALPÃO DO COBRE + descrição operacional informada",
- cobre:[],cobertoPor:null,
- areas:["Piso superior: salas administrativas","Piso inferior: banheiros","Piso inferior: sala de apresentação"]},
+{pe:"PE-07",nome:"Cobre (Sossego)",lat:-6.001522,lon:-49.896822,
+ area:"Galpao do Cobre",risco:"MEDIO",cls:"I-2",popFixa:20,
+ nec:2,quadro:6,ativos:1,venc:5,futuros:0,status:"ATENCAO",
+ obs:"5 VENCIDOS de 6. Apenas 1 ativo. Reciclagem URGENTE.",
+ cobre:["PE-08"],cobertoPor:null,
+ areas:["Galpao Concentrado Sossego","Galpao Salobo (PE-08)"]},
 
 {pe:"PE-08",nome:"Cobre (Salobo)",lat:-6.002394,lon:-49.897864,
- area:"Galpão do Cobre",risco:"MÉDIO",cls:"I-2",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
- obs:"Não considerar coberto pelo PE-07 apenas pela distância. Levantar ocupação, risco, população e efetivo próprio por turno.",
- fonte:"Sem correspondência específica na planilha",cobre:[],cobertoPor:null,
- areas:["Galpão Salobo"]},
+ area:"Galpao do Cobre",risco:"MEDIO",cls:"I-2",popFixa:0,
+ nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
+ obs:"Area relacionada ao PE-07 (Cobre). Distancia: ~151m.",
+ cobre:[],cobertoPor:"PE-07",
+ areas:["Galpao Salobo"]},
 
 {pe:"PE-09",nome:"ETEI",lat:-6.002931,lon:-49.898247,
  area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
- obs:"Sem correspondência específica na planilha. A proximidade da Área 2 não substitui o dimensionamento desta área.",
- fonte:"Dados pendentes",cobre:[],cobertoPor:null,
+ nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
+ obs:"Area relacionada ao PE-18 (Multiserv). Distancia: ~98m.",
+ cobre:[],cobertoPor:"PE-18",
  areas:["ETI do Cobre"]},
 
 {pe:"PE-10",nome:"ETA",lat:-6.004069,lon:-49.898611,
  area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
- obs:"Sem correspondência específica na planilha. Informar equipe, turno, população e classificação da instalação.",
- fonte:"Dados pendentes",cobre:[],cobertoPor:null,
- areas:["ETA Água Potável"]},
+ nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
+ obs:"Area relacionada ao PE-18. Ponto mais ao sul.",
+ cobre:[],cobertoPor:"PE-18",
+ areas:["ETA Agua Potavel"]},
 
 {pe:"PE-11",nome:"Subconjunto SLB",lat:-5.998804,lon:-49.899264,
- area:"Níquel Operação",risco:"MÉDIO",cls:"I-2",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
- obs:"A distância em linha reta até o PE-15 não comprova cobertura. Validar população, isolamento, rota e equipe por turno.",
- fonte:"Dados pendentes",cobre:[],cobertoPor:null,
+ area:"Niquel Operacao",risco:"MEDIO",cls:"I-2",popFixa:0,
+ nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
+ obs:"Area relacionada ao PE-15 (Niquel). Distancia: ~232m.",
+ cobre:[],cobertoPor:"PE-15",
  areas:["Oficina Subconjunto Salobo"]},
 
 {pe:"PE-12",nome:"Heliponto",lat:-5.999042,lon:-49.900756,
  area:"Dellavolpe",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
- obs:"Heliponto exige validação operacional própria. Não consta correspondência específica na planilha.",
- fonte:"Dados pendentes",cobre:[],cobertoPor:null,
+ nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
+ obs:"Area relacionada ao PE-14 (Della Volpe). Distancia: ~117m.",
+ cobre:[],cobertoPor:"PE-14",
  areas:["Heliponto"]},
 
 {pe:"PE-13",nome:"ETE",lat:-5.999150,lon:-49.901772,
  area:"Dellavolpe",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
- obs:"Não consta correspondência específica na planilha. Levantar risco do processo e equipe por turno.",
- fonte:"Dados pendentes",cobre:[],cobertoPor:null,
- areas:["ETE Sanitária"]},
+ nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
+ obs:"Area relacionada ao PE-14 (DV). Ponto extremo oeste.",
+ cobre:[],cobertoPor:"PE-14",
+ areas:["ETE Sanitaria"]},
 
 {pe:"PE-14",nome:"Della Volpe",lat:-6.000050,lon:-49.900617,
  area:"Dellavolpe",risco:"BAIXO",cls:"D-1",popFixa:25,
- nec:3,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
- obs:"A empresa/local Della Volpe não aparece na planilha recebida. Não manter o número antigo sem reconciliação documental.",
- fonte:"Sem correspondência em Brigada.xlsx",cobre:[],cobertoPor:null,
+ nec:2,quadro:7,ativos:0,venc:7,futuros:0,status:"CRITICO",
+ obs:"CRITICO: TODOS 7 VENCIDOS. Reciclagem URGENTE.",
+ cobre:["PE-12","PE-13","PE-16"],cobertoPor:null,
  areas:["Base Della Volpe","Heliponto (PE-12)","ETE (PE-13)","Estac. Equipamentos (PE-16)"]},
 
-{pe:"PE-15",nome:"Galpão do Níquel",lat:-6.000783,lon:-49.899944,
- area:"Níquel Operação",risco:"MÉDIO",cls:"I-2",popFixa:8,
- nec:5,quadro:9,ativos:9,venc:0,futuro:0,status:"ATENÇÃO",
- obs:"9 treinamentos vigentes. O quantitativo total atende preliminarmente, mas deve ser confirmado separadamente por turno e por presença real.",
- turnos:"Vigentes: A = 2; B = 4; C = 3",fonte:"Brigada.xlsx — NÍQUEL OPERAÇÃO",
- cobre:[],cobertoPor:null,
- areas:["Galpão do Níquel","Subconjunto SLB (PE-11)"]},
+{pe:"PE-15",nome:"Galpao do Niquel",lat:-6.000783,lon:-49.899944,
+ area:"Niquel Operacao",risco:"MEDIO",cls:"I-2",popFixa:8,
+ nec:2,quadro:7,ativos:7,venc:0,futuros:0,status:"REGULAR",
+ obs:"7 brigadistas. Saldo preliminar +5. Pop. fixa ~8 por turno.",
+ cobre:["PE-11"],cobertoPor:null,
+ areas:["Galpao do Niquel","Subconjunto SLB (PE-11)"]},
 
 {pe:"PE-16",nome:"Estac. Equipamentos",lat:-6.002078,lon:-49.900150,
  area:"Dellavolpe",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
- obs:"Sem correspondência específica na planilha. Estacionamento não pode ser considerado coberto somente pela proximidade.",
- fonte:"Dados pendentes",cobre:[],cobertoPor:null,
+ nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
+ obs:"Area relacionada ao PE-14 (Della Volpe).",
+ cobre:[],cobertoPor:"PE-14",
  areas:["Estacionamento de equipamentos"]},
 
-{pe:"PE-17",nome:"Descarga Carvão",lat:-6.002736,lon:-49.898853,
+{pe:"PE-17",nome:"Descarga Carvao",lat:-6.002736,lon:-49.898853,
  area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
- obs:"Descarga de carvão exige avaliação própria de processo, poeiras, equipamentos e carga de incêndio.",
- fonte:"Dados pendentes",cobre:[],cobertoPor:null,
- areas:["Estação de Descarga de Carvão"]},
+ nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
+ obs:"Area relacionada ao PE-18 (Multiserv). Distancia: ~79m.",
+ cobre:[],cobertoPor:"PE-18",
+ areas:["Estacao de Descarga de Carvao"]},
 
 {pe:"PE-18",nome:"Base Multiserv",lat:-6.002142,lon:-49.899406,
  area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:20,
- nec:3,quadro:7,ativos:7,venc:0,futuro:0,status:"ATENÇÃO",
- obs:"Planilha registra 7 vigentes em ÁREA 2/MULTSERV. Confirmar formalmente que ÁREA 2 corresponde a esta base. Não estender automaticamente o efetivo aos demais PEs.",
- turnos:"Vigentes: ADM = 1; A = 3; B = 3",fonte:"Brigada.xlsx — ÁREA 2 (correspondência provisória)",
- cobre:[],cobertoPor:null,
- areas:["Base Multiserv","ETEI (PE-09)","ETA (PE-10)","Desc. Carvão (PE-17)","Pátio Carvão (PE-19)","SHAFT (PE-20)","Pátio Materiais (PE-21)"]},
+ nec:2,quadro:6,ativos:6,venc:0,futuros:0,status:"REGULAR",
+ obs:"6 brigadistas. Saldo preliminar +4. 6 PEs adjacentes relacionados.",
+ cobre:["PE-09","PE-10","PE-17","PE-19","PE-20","PE-21"],cobertoPor:null,
+ areas:["Base Multiserv","ETEI (PE-09)","ETA (PE-10)","Desc. Carvao (PE-17)","Patio Carvao (PE-19)","SHAFT (PE-20)","Patio Materiais (PE-21)"]},
 
-{pe:"PE-19",nome:"Pátio Carvão",lat:-6.001450,lon:-49.899497,
+{pe:"PE-19",nome:"Patio Carvao",lat:-6.001450,lon:-49.899497,
  area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
- obs:"Pátio de carvão requer classificação baseada no processo e na carga de incêndio; não considerar cobertura automática pelo PE-18.",
- fonte:"Dados pendentes",cobre:[],cobertoPor:null,
- areas:["Pátio de Carvão"]},
+ nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
+ obs:"Area relacionada ao PE-18 (Multiserv).",
+ cobre:[],cobertoPor:"PE-18",
+ areas:["Patio de Carvao"]},
 
 {pe:"PE-20",nome:"SHAFT",lat:-6.002331,lon:-49.898806,
  area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
- obs:"Informar atividade, acesso, população e riscos específicos do SHAFT antes de definir brigada e ponto de encontro.",
- fonte:"Dados pendentes",cobre:[],cobertoPor:null,
+ nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
+ obs:"Area relacionada ao PE-18 (Multiserv).",
+ cobre:[],cobertoPor:"PE-18",
  areas:["SHAFT"]},
 
-{pe:"PE-21",nome:"Pátio de Materiais",lat:-6.001478,lon:-49.899044,
+{pe:"PE-21",nome:"Patio de Materiais",lat:-6.001478,lon:-49.899044,
  area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
- obs:"Classificar os materiais armazenados e a carga de incêndio antes de dimensionar. Proximidade não comprova cobertura.",
- fonte:"Dados pendentes",cobre:[],cobertoPor:null,
- areas:["Pátio de Materiais"]},
+ nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
+ obs:"Area relacionada ao PE-18 (Multiserv).",
+ cobre:[],cobertoPor:"PE-18",
+ areas:["Patio de Materiais"]},
 
-{pe:"PE-22",nome:"Subestação",lat:-6.000836,lon:-49.898669,
- area:"Subestação Manutenção",risco:"ALTO",cls:"M-3",popFixa:5,
- nec:6,quadro:3,ativos:3,venc:0,futuro:0,status:"CRÍTICO",
- obs:"Classificação corrigida provisoriamente para M-3 — central de comunicação e energia. Existem 3 vigentes, todos turno A/diurno. Necessidade preliminar: 6; validar PSCIE, carga de incêndio e nível de treinamento.",
- turnos:"Vigentes: A/diurno = 3",fonte:"Brigada.xlsx — SUBESTAÇÃO MANUTENÇÃO",
- cobre:[],cobertoPor:null,
- areas:["Subestação elétrica"]},
+{pe:"PE-22",nome:"Subestacao",lat:-6.000836,lon:-49.898669,
+ area:"Subestacao Manutencao",risco:"ALTO",cls:"I-3",popFixa:5,
+ nec:2,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
+ obs:"RISCO ALTO I-3. Vinculado ao PE-23 (19 brigadistas).",
+ cobre:[],cobertoPor:"PE-23",
+ areas:["Subestacao eletrica"]},
 
-{pe:"PE-23",nome:"Escritório Central",lat:-6.000694,lon:-49.898503,
- area:"Escritório Central Vale",risco:"BAIXO",cls:"D-1",popFixa:30,
- nec:3,quadro:9,ativos:8,venc:0,futuro:1,status:"ATENÇÃO",
- obs:"8 treinamentos vigentes e 1 treinamento com data futura. Quantitativo total atende preliminarmente, mas deve ser validado por turno; não usar o escritório para substituir o dimensionamento da subestação.",
- turnos:"Vigentes: A = 3; B = 4; C = 1; ADM futuro = 1",fonte:"Brigada.xlsx — ESCRITÓRIO CENTRAL VALE",
- cobre:[],cobertoPor:null,
- areas:["Escritório Central","SESMT","Ferramentaria","Laboratório Elétrico","Subestação (PE-22)","Dojô (PE-24)"]},
+{pe:"PE-23",nome:"Escritorio Central",lat:-6.000694,lon:-49.898503,
+ area:"Escritorio Central Vale",risco:"BAIXO",cls:"D-1",popFixa:30,
+ nec:2,quadro:19,ativos:19,venc:0,futuros:0,status:"REGULAR",
+ obs:"19 brigadistas. Saldo preliminar +17. 5 areas/predios relacionados.",
+ cobre:["PE-22","PE-24"],cobertoPor:null,
+ areas:["Escritorio Central","SESMT","Ferramentaria","Laboratorio Eletrico","Subestacao (PE-22)","Dojo (PE-24)"]},
 
-{pe:"PE-24",nome:"Dojô",lat:-6.000403,lon:-49.898219,
- area:"Escritório Central Vale",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
- obs:"Sem população e uso informados. A distância de 45 m até o escritório não substitui o dimensionamento próprio.",
- fonte:"Dados pendentes",cobre:[],cobertoPor:null,
- areas:["Pátio Dojô"]},
+{pe:"PE-24",nome:"Dojo",lat:-6.000403,lon:-49.898219,
+ area:"Escritorio Central Vale",risco:"BAIXO",cls:"D-1",popFixa:0,
+ nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
+ obs:"Area relacionada ao PE-23 (Escritorio). Distancia: ~45m.",
+ cobre:[],cobertoPor:"PE-23",
+ areas:["Patio Dojo"]},
 
-{pe:"PE-25",nome:"Base de Emergência",lat:-6.001447,lon:-49.900342,
+{pe:"PE-25",nome:"Base de Emergencia",lat:-6.001447,lon:-49.900342,
  area:"S.O.S.",risco:"BAIXO",cls:"D-1",popFixa:20,
- nec:3,quadro:5,ativos:5,venc:0,futuro:0,status:"BASE",
- obs:"Os 15 bombeiros civis e 5 brigadistas básicos não constam na Brigada.xlsx recebida. Manter apenas após conferir escala por turno, credenciais e fonte documental própria.",
- turnos:"Escala A/B/C/D — quantitativo simultâneo não informado",fonte:"Informação anterior; não validada pela planilha atual",
+ nec:2,quadro:5,ativos:5,venc:0,futuros:0,status:"BASE",
+ obs:"5 brigadistas basicos + 15 Bombeiros Civis (Turnos A/B/C/D). Base principal de resposta a emergencias para todo o terminal.",
  cobre:[],cobertoPor:null,
- areas:["Base de Emergência","Container Materiais","Ambulância","Viaturas (SE-11, HILUX)"]}
+ areas:["Base de Emergencia","Container Materiais","Ambulancia","Viaturas (SE-11, HILUX)"]}
 ];
 
-const PEINDEX = {};
-DATA.forEach((d,i) => PEINDEX[d.pe] = i);
+var PEINDEX = {};
+DATA.forEach(function(d,i){ PEINDEX[d.pe] = i; });
+
+/* ============ FUNCOES AUXILIARES ============ */
 
 function cor(s){
-  if(s==='CONFORME') return '#4CAF50';
-  if(s==='CRÍTICO') return '#f44336';
-  if(s==='ATENÇÃO') return '#FF9800';
+  if(s==='REGULAR') return '#4CAF50';
+  if(s==='CRITICO') return '#f44336';
+  if(s==='ATENCAO') return '#FF9800';
   if(s==='BASE') return '#1E88E5';
-  return '#616161';
+  return '#78909C';
 }
 
 function riscoCor(r){
   if(r==='ALTO') return '#f44336';
-  if(r==='MÉDIO') return '#FF9800';
+  if(r==='MEDIO') return '#FF9800';
   return '#4CAF50';
 }
 
-const map = L.map('map',{zoomControl:false}).setView([-6.001,-49.898],17);
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
-  maxZoom:19,
-  attribution:'Tiles &copy; Esri — Source: Esri, Earthstar Geographics e comunidade GIS'
-}).addTo(map);
+function recalcStatus(d){
+  if(d.cobertoPor) return 'VINCULADO';
+  if(d.pe==='PE-25') return 'BASE';
+  if(d.nec===0) return 'VINCULADO';
+  if(d.ativos >= d.nec){
+    return d.venc > 0 ? 'ATENCAO' : 'REGULAR';
+  }
+  if(d.ativos > 0) return 'ATENCAO';
+  return 'CRITICO';
+}
+
+function statusLabel(d){
+  if(d.status==='VINCULADO') return 'VINCULADO AO ' + d.cobertoPor;
+  if(d.status==='REGULAR') return 'ATEND. PRELIMINAR';
+  if(d.status==='ATENCAO') return 'ATENCAO';
+  if(d.status==='CRITICO') return 'CRITICO';
+  if(d.status==='BASE') return 'BASE EMERGENCIA';
+  return d.status;
+}
+
+function computeTotals(){
+  var r=0,v=0,ve=0,f=0;
+  DATA.forEach(function(d){
+    r += d.quadro||0;
+    v += d.ativos||0;
+    ve += d.venc||0;
+    f += d.futuros||0;
+  });
+  return {reg:r,vig:v,ven:ve,fut:f};
+}
+
+function updateTitleBar(){
+  var t = computeTotals();
+  document.getElementById('nReg').textContent = t.reg;
+  document.getElementById('nVig').textContent = t.vig;
+  document.getElementById('nVenc').textContent = t.ven;
+  document.getElementById('nFut').textContent = t.fut;
+}
+
+/* ============ CSV PARSER ============ */
+
+function parseCSV(text){
+  var rows=[], row=[], cell='', inQ=false;
+  for(var i=0; i<text.length; i++){
+    var ch=text[i];
+    if(inQ){
+      if(ch==='"'){ if(text[i+1]==='"'){cell+='"';i++;}else inQ=false; }
+      else cell+=ch;
+    } else {
+      if(ch==='"') inQ=true;
+      else if(ch===','){row.push(cell.trim());cell='';}
+      else if(ch==='\n'||(ch==='\r'&&text[i+1]==='\n')){
+        row.push(cell.trim());
+        if(row.length>1||row[0]) rows.push(row);
+        row=[];cell='';
+        if(ch==='\r') i++;
+      } else cell+=ch;
+    }
+  }
+  if(cell||row.length){row.push(cell.trim());rows.push(row);}
+  return rows;
+}
+
+/* ============ CSV FETCH E MERGE ============ */
+
+function extractSummary(rows){
+  for(var i=0;i<Math.min(5,rows.length);i++){
+    var line = rows[i].join(',');
+    if(line.indexOf('Registros:')>-1){
+      var nums={};
+      rows[i].forEach(function(c){
+        var m=c.match(/^(\w+):\s*(\d+)$/);
+        if(m) nums[m[1]]=parseInt(m[2]);
+      });
+      return nums;
+    }
+  }
+  return null;
+}
+
+function fetchAndMerge(){
+  fetch(CSV_URL)
+    .then(function(resp){
+      if(!resp.ok) throw new Error('HTTP '+resp.status);
+      return resp.text();
+    })
+    .then(function(text){
+      var rows = parseCSV(text);
+
+      var summary = extractSummary(rows);
+
+      var headerIdx = -1;
+      for(var i=0;i<rows.length;i++){
+        if(rows[i][0]==='PE'){headerIdx=i;break;}
+      }
+      if(headerIdx<0) throw new Error('Header PE nao encontrado');
+
+      var headers = rows[headerIdx];
+      var colMap = {};
+      headers.forEach(function(h,idx){colMap[h.trim()]=idx;});
+
+      var csvData = {};
+      for(var j=headerIdx+1;j<rows.length;j++){
+        var r = rows[j];
+        if(!r[0]||r[0].indexOf('PE-')!==0) continue;
+        csvData[r[0]] = {
+          registros: parseInt(r[colMap['Registros']]||'0')||0,
+          vigentes:  parseInt(r[colMap['Vigentes']]||'0')||0,
+          vencidos:  parseInt(r[colMap['Vencidos']]||'0')||0,
+          futuros:   parseInt(r[colMap['Futuros']]||'0')||0
+        };
+      }
+
+      DATA.forEach(function(d){
+        if(csvData[d.pe]){
+          d.quadro  = csvData[d.pe].registros;
+          d.ativos  = csvData[d.pe].vigentes;
+          d.venc    = csvData[d.pe].vencidos;
+          d.futuros = csvData[d.pe].futuros;
+          d.status  = recalcStatus(d);
+        }
+      });
+
+      if(summary){
+        document.getElementById('nReg').textContent = summary.Registros||0;
+        document.getElementById('nVig').textContent = summary.Vigentes||0;
+        document.getElementById('nVenc').textContent = summary.Vencidos||0;
+        document.getElementById('nFut').textContent = summary.Futuros||0;
+      } else {
+        updateTitleBar();
+      }
+      updateMarkers();
+      document.getElementById('csvStatus').textContent =
+        'Dados sincronizados via planilha';
+    })
+    .catch(function(e){
+      console.warn('CSV fallback:',e);
+      document.getElementById('csvStatus').textContent =
+        'Modo offline — dados locais';
+      updateTitleBar();
+    });
+}
+
+/* ============ MAPA ============ */
+
+var map = L.map('map',{zoomControl:false}).setView([-6.001,-49.898],17);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}).addTo(map);
 L.control.zoom({position:'bottomright'}).addTo(map);
 
-const markers = [];
-let covLines = [];
-let selectedIdx = -1;
+var markers = [];
+var covLines = [];
+var selectedIdx = -1;
 
-DATA.forEach((d,i) => {
-  const c = cor(d.status);
-  const num = d.pe.replace('PE-','');
-
-  const icon = L.divIcon({
+DATA.forEach(function(d,i){
+  var c = cor(d.status);
+  var icon = L.divIcon({
     className:'pe-marker',
-    iconSize:[80, 50],
-    iconAnchor:[40, 50],
-    html:`<div class="pin-wrap" id="pin-${i}">
-      <div class="pin-head" style="background:${c}">${d.pe}</div>
-      <div class="pin-arrow" style="border-top:8px solid ${c}"></div>
-      <div class="pin-label">${d.nome}</div>
-    </div>`
+    iconSize:[80,50],
+    iconAnchor:[40,50],
+    html:'<div class="pin-wrap" id="pin-'+i+'">'+
+      '<div class="pin-head" style="background:'+c+'">'+d.pe+'</div>'+
+      '<div class="pin-arrow" style="border-top:8px solid '+c+'"></div>'+
+      '<div class="pin-label">'+d.nome+'</div>'+
+    '</div>'
   });
-
-  const m = L.marker([d.lat,d.lon],{icon}).addTo(map).on('click',()=>showInfo(i));
+  var m = L.marker([d.lat,d.lon],{icon:icon}).addTo(map).on('click',function(){showInfo(i);});
   markers.push(m);
 });
 
+function updateMarkers(){
+  DATA.forEach(function(d,i){
+    var c = cor(d.status);
+    var pin = document.getElementById('pin-'+i);
+    if(pin){
+      pin.querySelector('.pin-head').style.background = c;
+      pin.querySelector('.pin-arrow').style.borderTopColor = c;
+    }
+  });
+}
+
+/* ============ PAINEL ============ */
+
 function clearCoverage(){
-  covLines.forEach(l => map.removeLayer(l));
-  covLines = [];
-  if(selectedIdx >= 0){
-    const pin = document.getElementById('pin-'+selectedIdx);
-    if(pin) pin.style.filter = '';
+  covLines.forEach(function(l){map.removeLayer(l);});
+  covLines=[];
+  if(selectedIdx>=0){
+    var pin=document.getElementById('pin-'+selectedIdx);
+    if(pin) pin.style.filter='';
   }
 }
 
 function showInfo(i){
   clearCoverage();
-  selectedIdx = i;
-  const d = DATA[i];
-  const panel = document.getElementById('panel');
-  panel.style.display = 'block';
+  selectedIdx=i;
+  var d=DATA[i];
+  var panel=document.getElementById('panel');
+  panel.style.display='block';
 
-  document.getElementById('pTitle').textContent = d.pe + ' — ' + d.nome;
-  document.getElementById('pSub').textContent = d.area + ' | ' + d.cls + ' | Risco ' + d.risco;
+  document.getElementById('pTitle').textContent = d.pe+' — '+d.nome;
+  document.getElementById('pSub').textContent = d.area+' | '+d.cls+' | Risco '+d.risco;
 
-  const sColor = cor(d.status);
-  const statusLabel = d.status === 'SEM DADO' ? 'DADOS NÃO CONCILIADOS' : d.status;
+  var sColor = cor(d.status);
+  var sLabel = statusLabel(d);
   document.getElementById('pStatus').innerHTML =
-    `<div class="panel-status" style="background:${sColor};color:#fff">${statusLabel}</div>
-     <span class="panel-status" style="background:${riscoCor(d.risco)};color:#fff;margin-left:6px">${d.risco}</span>`;
+    '<div class="panel-status" style="background:'+sColor+';color:#fff">'+sLabel+'</div>'+
+    '<span class="panel-status" style="background:'+riscoCor(d.risco)+';color:#fff;margin-left:6px">'+d.risco+'</span>';
 
-  let html = '';
+  var html='';
 
-  // Efetivo
-  html += '<div class="panel-section"><h3>EFETIVO PRELIMINAR</h3>';
-  if(d.pe === 'PE-25'){
-    html += '<div class="pr"><span class="k">Brigadistas básicos informados</span><span class="v">5</span></div>';
-    html += '<div class="pr"><span class="k">Bombeiros civis informados</span><span class="v">15</span></div>';
-    html += '<div class="warning-box">Os números da Base de Emergência não constam na planilha recebida e não representam presença simultânea.</div>';
-  } else if(d.nec > 0){
-    html += `<div class="pr"><span class="k">Mínimo preliminar</span><span class="v">${d.nec}</span></div>`;
-    html += `<div class="pr"><span class="k">Registros na planilha</span><span class="v">${d.quadro}</span></div>`;
-    html += `<div class="pr"><span class="k">Treinamentos vigentes</span><span class="v" style="color:${d.ativos>=d.nec?'#4CAF50':'#f44336'}">${d.ativos}</span></div>`;
-    if(d.venc > 0) html += `<div class="pr"><span class="k">Vencidos</span><span class="v" style="color:#FF9800">${d.venc}</span></div>`;
-    if((d.futuro||0) > 0) html += `<div class="pr"><span class="k">Treinamentos futuros</span><span class="v" style="color:#FF9800">${d.futuro}</span></div>`;
-    const saldo = d.ativos - d.nec;
-    html += `<div class="pr"><span class="k">Saldo preliminar</span><span class="v" style="color:${saldo>=0?'#4CAF50':'#f44336'}">${saldo>=0?'+':''}${saldo}</span></div>`;
+  /* EFETIVO */
+  html+='<div class="panel-section"><h3>EFETIVO IT08</h3>';
+  if(d.pe==='PE-25'){
+    html+='<div class="pr"><span class="k">Brigadistas basicos</span><span class="v" style="color:#4CAF50">'+d.ativos+'</span></div>';
+    html+='<div class="pr"><span class="k">Bombeiros Civis (4 turnos)</span><span class="v" style="color:#1E88E5">15</span></div>';
+    html+='<div class="pr"><span class="k">Quantitativo vigente identificado</span><span class="v" style="color:#FFD600">'+(d.ativos+15)+'</span></div>';
+  } else if(d.nec>0){
+    html+='<div class="pr"><span class="k">Necessarios (IT08)</span><span class="v">'+d.nec+'</span></div>';
+    html+='<div class="pr"><span class="k">No quadro</span><span class="v">'+d.quadro+'</span></div>';
+    html+='<div class="pr"><span class="k">Vigentes</span><span class="v" style="color:'+(d.ativos>=d.nec?'#4CAF50':'#f44336')+'">'+d.ativos+'</span></div>';
+    if(d.venc>0) html+='<div class="pr"><span class="k">Vencidos</span><span class="v" style="color:#FF9800">'+d.venc+'</span></div>';
+    if(d.futuros>0) html+='<div class="pr"><span class="k">Futuros</span><span class="v" style="color:#90CAF9">'+d.futuros+'</span></div>';
+    var saldo=d.ativos-d.nec;
+    html+='<div class="pr"><span class="k">Saldo preliminar</span><span class="v" style="color:'+(saldo>=0?'#4CAF50':'#f44336')+'">'+(saldo>=0?'+':'')+saldo+'</span></div>';
   } else {
-    html += '<div style="font-size:11px;color:#aaa;padding:4px 0">Dimensionamento pendente de dados.</div>';
+    html+='<div style="font-size:11px;color:#aaa;padding:4px 0">'+d.obs+'</div>';
   }
-  if(d.popFixa > 0) html += `<div class="pr"><span class="k">Pop. fixa estimada</span><span class="v">${d.popFixa}</span></div>`;
-  if(d.turnos) html += `<div class="data-note"><b>Distribuição informada:</b> ${d.turnos}</div>`;
-  html += '</div>';
+  if(d.popFixa>0) html+='<div class="pr"><span class="k">Pop. fixa estimada</span><span class="v">'+d.popFixa+'</span></div>';
+  html+='</div>';
 
-  html += `<div class="warning-box">${d.obs}</div>`;
-  if(d.fonte) html += `<div class="data-note"><b>Fonte:</b> ${d.fonte}</div>`;
-
-  // Áreas relacionadas ao ponto de encontro (não implica cobertura legal)
-  html += '<div class="panel-section"><h3>ÁREAS RELACIONADAS AO PE</h3>';
-  d.areas.forEach(a => {
-    html += `<div class="cov-area">• ${a}</div>`;
+  /* AREAS */
+  html+='<div class="panel-section"><h3>AREAS RELACIONADAS AO PE</h3>';
+  d.areas.forEach(function(a){
+    html+='<div class="cov-area">'+a+'</div>';
   });
-  html += '</div>';
+  html+='</div>';
 
-  // RESPALDO LEGAL
-  html += '<div class="panel-section"><h3>RESPALDO LEGAL</h3>';
+  /* PEs que este cobre */
+  if(d.cobre.length>0){
+    html+='<div class="panel-section"><h3>PEs SOB COBERTURA</h3><div>';
+    d.cobre.forEach(function(pe){
+      var ci=PEINDEX[pe];
+      var cd=DATA[ci];
+      html+='<span class="cov-tag">'+pe+' '+cd.nome+'</span>';
+    });
+    html+='</div></div>';
 
-  // IT08 - sempre
-  const clsDesc = {
-    'D-1':'Serviços profissionais (escritórios, salas técnicas)',
-    'D-2':'Oficinas e serviços de reparos',
-    'F-8':'Local para refeição',
-    'I-1':'Industrial — risco a validar pela carga de incêndio',
-    'I-2':'Industrial — risco a validar pela carga de incêndio',
-    'I-3':'Industrial — carga de incêndio elevada',
-    'J-1':'Depósito de materiais incombustíveis',
-    'M-3':'Central de comunicação e energia'
+    d.cobre.forEach(function(pe){
+      var ci=PEINDEX[pe];
+      var cd=DATA[ci];
+      var line=L.polyline(
+        [[d.lat,d.lon],[cd.lat,cd.lon]],
+        {color:'#FFD600',weight:2.5,dashArray:'6,4',opacity:0.8}
+      ).addTo(map);
+      var dist=Math.round(map.distance([d.lat,d.lon],[cd.lat,cd.lon]));
+      line.bindTooltip(dist+'m',{permanent:true,direction:'center',
+        className:'pin-label',offset:[0,-8]});
+      covLines.push(line);
+    });
+  }
+
+  /* Vinculado a */
+  if(d.cobertoPor){
+    var ci=PEINDEX[d.cobertoPor];
+    var cd=DATA[ci];
+    html+='<div class="panel-section"><h3>VINCULADO A</h3>';
+    html+='<span class="cov-tag" style="font-size:12px;padding:4px 12px">'+d.cobertoPor+' — '+cd.nome+' ('+cd.ativos+' vigentes)</span>';
+    html+='</div>';
+
+    var line=L.polyline(
+      [[d.lat,d.lon],[cd.lat,cd.lon]],
+      {color:'#FFD600',weight:2.5,dashArray:'6,4',opacity:0.8}
+    ).addTo(map);
+    var dist=Math.round(map.distance([d.lat,d.lon],[cd.lat,cd.lon]));
+    line.bindTooltip(dist+'m',{permanent:true,direction:'center',
+      className:'pin-label',offset:[0,-8]});
+    covLines.push(line);
+  }
+
+  /* RESPALDO LEGAL */
+  html+='<div class="panel-section"><h3>RESPALDO LEGAL</h3>';
+
+  var clsDesc={
+    'D-1':'Servicos profissionais (escritorios, salas tecnicas)',
+    'D-2':'Oficinas e servicos de reparos',
+    'I-1':'Industrial — risco baixo',
+    'I-2':'Industrial — risco moderado',
+    'I-3':'Industrial — risco alto (eletrico/quimico)',
+    'J-1':'Deposito de materiais incombustiveis',
+    'M-3':'Subestacao eletrica'
   };
 
-  html += '<div class="lei-box"><b>IT-08 CBMPA</b> · Enquadramento preliminar <b style="color:#FFD600">' + d.cls + '</b> — ' + (clsDesc[d.cls]||d.cls) + '<br>';
-  if(d.nec > 0) html += 'Estimativa inicial: <b>' + d.nec + '</b> brigadistas · ';
-  else html += 'Dimensionamento pendente · ';
-  html += 'validar por edificação, pavimento/compartimento, população e turno';
-  if(d.venc > 0) html += ' · <b style="color:#FF9800">⚠ ' + d.venc + ' vencido(s)</b>';
-  html += '</div>';
+  html+='<div class="lei-box"><b>IT-08 CBMPA</b> — Classificacao <b style="color:#FFD600">'+d.cls+'</b> — '+(clsDesc[d.cls]||d.cls)+'<br>';
+  if(d.nec>0) html+='Min. <b>'+d.nec+'</b> brigadistas — ';
+  else html+='Vinculado a PE adjacente — ';
+  html+='<b>NBR 14276</b> reciclagem anual';
+  if(d.venc>0) html+=' — <b style="color:#FF9800">'+d.venc+' vencido(s)</b>';
+  html+='</div>';
 
-  // NR-23 sempre
-  html += '<div class="lei-box"><b>NR-23</b> · Saídas de emergência, sinalização e combate a incêndio</div>';
+  html+='<div class="lei-box"><b>NR-23</b> — Saidas de emergencia, sinalizacao e combate a incendio</div>';
 
-  // NR específicas (só quando aplica)
-  if(d.cls === 'M-3')
-    html += '<div class="lei-box"><b>NR-10</b> · Aplicável aos trabalhadores que interagem com instalações ou serviços em eletricidade; validar autorizações e procedimentos.</div>';
+  if(d.cls==='I-3'||d.cls==='M-3')
+    html+='<div class="lei-box"><b>NR-10</b> — Risco eletrico elevado — controle especial</div>';
 
-  if(d.pe === 'PE-25')
-    html += '<div class="lei-box"><b>Lei 11.901/2009</b> + normas técnicas vigentes · conferir escala, qualificação, capacitações específicas e documentação de cada bombeiro civil.</div>';
+  if(d.pe==='PE-25')
+    html+='<div class="lei-box"><b>Lei 11.901</b> + <b>NBR 14608</b> — 15 BM Civis (4 turnos)</div>';
 
-  html += '<div class="lei-box"><b>Nota técnica</b> · A distância entre PEs não substitui o dimensionamento da brigada por setor, turno e risco.</div>';
+  if(d.cobre.length>0)
+    html+='<div class="lei-box"><b>IT-08</b> — Cobertura conjunta — '+d.cobre.length+' PE(s) adjacente(s)</div>';
 
-  html += '</div>';
+  if(d.cobertoPor)
+    html+='<div class="lei-box"><b>IT-08</b> — Vinculado ao '+d.cobertoPor+'</div>';
 
-  document.getElementById('pContent').innerHTML = html;
+  html+='</div>';
 
-  // Highlight pin selecionado
-  const pin = document.getElementById('pin-'+i);
-  if(pin) pin.style.filter = 'drop-shadow(0 0 8px #FFD600)';
+  document.getElementById('pContent').innerHTML=html;
+
+  var pin=document.getElementById('pin-'+i);
+  if(pin) pin.style.filter='drop-shadow(0 0 8px #FFD600)';
 }
 
 function closePanel(){
   document.getElementById('panel').style.display='none';
   clearCoverage();
-  selectedIdx = -1;
+  selectedIdx=-1;
 }
 
 function fitAll(){
-  map.fitBounds(L.latLngBounds(DATA.map(d=>[d.lat,d.lon])).pad(0.12));
+  map.fitBounds(L.latLngBounds(DATA.map(function(d){return[d.lat,d.lon];})).pad(0.12));
 }
-fitAll();
 
-map.on('click', function(e){
-  if(e.originalEvent.target === map.getContainer() ||
+/* ============ INIT ============ */
+
+fitAll();
+updateTitleBar();
+fetchAndMerge();
+
+map.on('click',function(e){
+  if(e.originalEvent.target===map.getContainer()||
      e.originalEvent.target.classList.contains('leaflet-tile')){
     closePanel();
   }
