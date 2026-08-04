@@ -472,14 +472,8 @@ function fetchAndMerge(){
         }
       });
 
-      if(summary){
-        document.getElementById('nReg').textContent = summary.Registros||0;
-        document.getElementById('nVig').textContent = summary.Vigentes||0;
-        document.getElementById('nVenc').textContent = summary.Vencidos||0;
-        document.getElementById('nFut').textContent = summary.Futuros||0;
-      } else {
-        updateTitleBar();
-      }
+      /* Sempre computa totais dos dados reais por PE */
+      updateTitleBar();
       updateMarkers();
       document.getElementById('csvStatus').textContent =
         'Dados sincronizados via planilha';
