@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cobertura de Brigada IT08 — ETP Parauapebas</title>
+<title>Gestão de Brigada e Pontos de Encontro — ETP Parauapebas</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -12,10 +12,16 @@ body{font-family:Arial,sans-serif;background:#111}
 #map{width:100%;height:100vh}
 
 .title-bar{
-  position:fixed;top:0;left:50%;transform:translateX(-50%);
+  position:fixed;top:24px;left:50%;transform:translateX(-50%);
   background:rgba(0,58,112,0.95);color:#fff;padding:10px 24px;
   border-radius:0 0 12px 12px;z-index:1000;text-align:center;
   backdrop-filter:blur(8px);border-bottom:3px solid #FFD600;
+}
+.privacy-bar{
+  position:fixed;top:0;left:0;right:0;height:24px;z-index:1002;
+  display:flex;align-items:center;justify-content:center;
+  background:#9b1c1c;color:#fff;font-size:10px;font-weight:800;
+  letter-spacing:1px;text-transform:uppercase;
 }
 .title-bar h1{font-size:13px;color:#FFD600;letter-spacing:1.5px}
 .title-bar p{font-size:10px;color:#ccc;margin-top:2px}
@@ -108,29 +114,44 @@ body{font-family:Arial,sans-serif;background:#111}
   border:1px solid rgba(255,214,0,0.3);
   padding:8px 14px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;
 }
+.data-note{font-size:10px;color:#aeb8c2;line-height:1.45;margin-top:7px}
+.warning-box{background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.35);color:#ffd39b;padding:8px 10px;border-radius:6px;font-size:10px;line-height:1.45;margin-top:8px}
+
+@media (max-width:720px){
+  .title-bar{top:24px;width:calc(100% - 16px);padding:8px 10px}
+  .title-bar h1{font-size:11px}.title-bar p{font-size:9px}
+  .title-bar .nums{gap:10px;flex-wrap:wrap}.title-bar .nb-v{font-size:16px}
+  .legend{left:8px;bottom:8px;max-width:210px;padding:9px 10px;font-size:9px}
+  .panel{right:6px;left:6px;width:auto;top:auto;bottom:6px;transform:none;max-height:72vh}
+  .btn-fit{right:8px;bottom:8px}
+}
 </style>
 </head>
 <body>
 <div id="map"></div>
 
+<div class="privacy-bar">Uso interno • dados operacionais • não publicar sem autorização</div>
+
 <div class="title-bar">
-<h1>COBERTURA DE BRIGADA — IT08 CBMPA</h1>
-<p>Terminal de Parauapebas (ETP) — Vale Metais Básicos</p>
+<h1>GESTÃO DE BRIGADA E PONTOS DE ENCONTRO</h1>
+<p>Terminal de Parauapebas (ETP) • Base: Brigada.xlsx • Referência: 03/08/2026</p>
 <div class="nums">
   <div class="nb"><div class="nb-v">24</div><div class="nb-l">Pontos de Encontro</div></div>
-  <div class="nb"><div class="nb-v">119</div><div class="nb-l">Brigadistas Básicos</div></div>
-  <div class="nb"><div class="nb-v">15</div><div class="nb-l">Bombeiros Civis</div></div>
-  <div class="nb"><div class="nb-v" style="color:#4CAF50">+95</div><div class="nb-l">Superávit IT08</div></div>
+  <div class="nb"><div class="nb-v">111</div><div class="nb-l">Registros na planilha</div></div>
+  <div class="nb"><div class="nb-v" style="color:#4CAF50">85</div><div class="nb-l">Treinamentos vigentes</div></div>
+  <div class="nb"><div class="nb-v" style="color:#f44336">23</div><div class="nb-l">Vencidos</div></div>
+  <div class="nb"><div class="nb-v" style="color:#FF9800">3</div><div class="nb-l">Treinamentos futuros</div></div>
 </div>
 </div>
 
 <div class="legend">
-<h3>SITUAÇÃO IT08</h3>
-<div class="lg-i"><div class="lg-d" style="background:#4CAF50"></div> Conforme — ativos ≥ necessários</div>
-<div class="lg-i"><div class="lg-d" style="background:#FF9800"></div> Atenção — brigadistas com curso vencido</div>
-<div class="lg-i"><div class="lg-d" style="background:#f44336"></div> Crítico — todos vencidos ou déficit</div>
+<h3>SITUAÇÃO PRELIMINAR</h3>
+<div class="lg-i"><div class="lg-d" style="background:#4CAF50"></div> Quantitativo preliminar atendido</div>
+<div class="lg-i"><div class="lg-d" style="background:#FF9800"></div> Atenção — turno, prazo ou classificação</div>
+<div class="lg-i"><div class="lg-d" style="background:#f44336"></div> Crítico — déficit ou sem vigente</div>
 <div class="lg-i"><div class="lg-d" style="background:#1E88E5"></div> Base de Emergência (BM Civis)</div>
-<div class="lg-i"><div class="lg-d" style="background:#78909C"></div> Coberto por PE adjacente</div>
+<div class="lg-i"><div class="lg-d" style="background:#616161"></div> Dados não conciliados</div>
+<div class="data-note">Qualidade da base: 1 CPF duplicado, 2 registros sem local e 3 treinamentos com data futura a conferir.</div>
 </div>
 
 <button class="btn-fit" onclick="fitAll()">Ver tudo</button>
@@ -151,169 +172,179 @@ body{font-family:Arial,sans-serif;background:#111}
 const DATA = [
 {pe:"PE-01",nome:"Portaria Principal",lat:-5.999114,lon:-49.895811,
  area:"Portaria Principal",risco:"BAIXO",cls:"D-1",popFixa:4,
- nec:2,quadro:2,ativos:2,venc:0,status:"CONFORME",
- obs:"2 brigadistas ativos. Máx. 4 pessoas/turno (regime de turnos). Conforme IT08.",
+ nec:2,quadro:1,ativos:1,venc:0,futuro:0,status:"CRÍTICO",
+ obs:"Planilha: 1 treinamento vigente, somente turno B/noturno. Não há cobertura diurna comprovada.",
+ turnos:"Vigentes: B/noturno = 1",fonte:"Brigada.xlsx — PORTARIA PRINCIPAL",
  cobre:[],cobertoPor:null,
  areas:["Portaria","Balança rodoviária"]},
 
 {pe:"PE-03",nome:"Refeitório Tacacá",lat:-5.999444,lon:-49.895458,
- area:"Refeitório Tacacá",risco:"BAIXO",cls:"D-1",popFixa:15,
- nec:2,quadro:9,ativos:9,venc:0,status:"CONFORME",
- obs:"9 brigadistas (Chão Goiano). Superávit +7.",
+ area:"Refeitório Tacacá",risco:"BAIXO",cls:"F-8",popFixa:15,
+ nec:5,quadro:4,ativos:1,venc:1,futuro:2,status:"CRÍTICO",
+ obs:"Uso corrigido para F-8 (local para refeição). Há 1 vigente, 1 vencido e 2 treinamentos com data futura; não contar os futuros antes da conclusão.",
+ turnos:"Vigente: ADM/diurno = 1",fonte:"Brigada.xlsx — REFEITÓRIO TACACÁ",
  cobre:[],cobertoPor:null,
  areas:["Refeitório","Cozinha industrial"]},
 
 {pe:"PE-04",nome:"CCGEO (Litoteca)",lat:-6.000758,lon:-49.894892,
  area:"Galpão de Testemunho",risco:"BAIXO",cls:"J-1",popFixa:30,
- nec:2,quadro:6,ativos:6,venc:0,status:"CONFORME",
- obs:"6 brigadistas. Superávit +4. Pop. fixa ~30 por turno.",
+ nec:3,quadro:11,ativos:11,venc:0,futuro:0,status:"ATENÇÃO",
+ obs:"11 treinamentos vigentes, todos ADM/diurno. Confirmar se J-1 é válido: testemunhos, embalagens, mobiliário e laboratório podem alterar a carga de incêndio.",
+ turnos:"Vigentes: ADM/diurno = 11",fonte:"Brigada.xlsx — GALPÃO DE TESTEMUNHO",
  cobre:[],cobertoPor:null,
  areas:["Galpão de testemunho","Litoteca","Laboratório de solos"]},
 
 {pe:"PE-05",nome:"JSL (Base 01)",lat:-6.001942,lon:-49.896458,
  area:"Base Motoristas JSL",risco:"BAIXO",cls:"D-1",popFixa:30,
- nec:2,quadro:64,ativos:64,venc:0,status:"CONFORME",
- obs:"64 brigadistas JSL. Grande superávit +62.",
- cobre:["PE-06"],cobertoPor:null,
+ nec:3,quadro:31,ativos:10,venc:21,futuro:0,status:"ATENÇÃO",
+ obs:"31 registros: 10 vigentes e 21 vencidos. Os 10 vigentes vencem entre 23 e 30/08/2026; programar atualização imediata.",
+ turnos:"Vigentes: diurno = 1; noturno = 9",fonte:"Brigada.xlsx — BASE MOTORISTAS JSL",
+ cobre:[],cobertoPor:null,
  areas:["Base JSL","Pátio de caminhões","Moega (PE-06)"]},
 
 {pe:"PE-06",nome:"Moega",lat:-6.002350,lon:-49.896647,
  area:"Base Motoristas JSL",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
- obs:"Coberto pelo PE-05 (JSL). Distância: ~50m.",
- cobre:[],cobertoPor:"PE-05",
+ nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
+ obs:"A proximidade do PE-05 não comprova cobertura legal. Informar população por turno, ocupação, brigadistas designados e rota real.",
+ fonte:"Sem correspondência específica na planilha",cobre:[],cobertoPor:null,
  areas:["Moega de descarga"]},
 
-{pe:"PE-07",nome:"Cobre (Sossego)",lat:-6.001522,lon:-49.896822,
- area:"Galpão do Cobre",risco:"MÉDIO",cls:"I-2",popFixa:15,
- nec:2,quadro:6,ativos:1,venc:5,status:"ATENÇÃO",
- obs:"5 VENCIDOS de 6. Apenas 1 ativo. Reciclagem URGENTE.",
- cobre:["PE-08"],cobertoPor:null,
- areas:["Galpão Concentrado Sossego","Galpão Salobo (PE-08)"]},
+{pe:"PE-07",nome:"Administrativo Cobre",lat:-6.001522,lon:-49.896822,
+ area:"Prédio Administrativo do Cobre",risco:"BAIXO",cls:"D-1",popFixa:15,
+ nec:3,quadro:1,ativos:0,venc:1,futuro:0,status:"CRÍTICO",
+ obs:"Uso informado: salas administrativas no piso superior; banheiros e sala de apresentação no piso inferior. A planilha possui 1 brigadista vinculado ao GALPÃO DO COBRE, vencido em 09/05/2026. Necessidade preliminar D-1/baixo: 3. Validar capacidade e uso da sala de apresentação; se funcionar como auditório/reunião de público, reclassificar e recalcular.",
+ turnos:"Nenhum treinamento vigente; registro existente: ADM/diurno, vencido",fonte:"Brigada.xlsx — GALPÃO DO COBRE + descrição operacional informada",
+ cobre:[],cobertoPor:null,
+ areas:["Piso superior: salas administrativas","Piso inferior: banheiros","Piso inferior: sala de apresentação"]},
 
 {pe:"PE-08",nome:"Cobre (Salobo)",lat:-6.002394,lon:-49.897864,
  area:"Galpão do Cobre",risco:"MÉDIO",cls:"I-2",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
- obs:"Coberto pelo PE-07 (Cobre). Distância: ~151m.",
- cobre:[],cobertoPor:"PE-07",
+ nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
+ obs:"Não considerar coberto pelo PE-07 apenas pela distância. Levantar ocupação, risco, população e efetivo próprio por turno.",
+ fonte:"Sem correspondência específica na planilha",cobre:[],cobertoPor:null,
  areas:["Galpão Salobo"]},
 
 {pe:"PE-09",nome:"ETEI",lat:-6.002931,lon:-49.898247,
  area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
- obs:"Coberto pelo PE-18 (Multiserv). Distância: ~98m.",
- cobre:[],cobertoPor:"PE-18",
+ nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
+ obs:"Sem correspondência específica na planilha. A proximidade da Área 2 não substitui o dimensionamento desta área.",
+ fonte:"Dados pendentes",cobre:[],cobertoPor:null,
  areas:["ETI do Cobre"]},
 
 {pe:"PE-10",nome:"ETA",lat:-6.004069,lon:-49.898611,
  area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
- obs:"Coberto pelo PE-18. Ponto mais ao sul.",
- cobre:[],cobertoPor:"PE-18",
+ nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
+ obs:"Sem correspondência específica na planilha. Informar equipe, turno, população e classificação da instalação.",
+ fonte:"Dados pendentes",cobre:[],cobertoPor:null,
  areas:["ETA Água Potável"]},
 
 {pe:"PE-11",nome:"Subconjunto SLB",lat:-5.998804,lon:-49.899264,
  area:"Níquel Operação",risco:"MÉDIO",cls:"I-2",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
- obs:"Coberto pelo PE-15 (Níquel). Distância: ~232m.",
- cobre:[],cobertoPor:"PE-15",
+ nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
+ obs:"A distância em linha reta até o PE-15 não comprova cobertura. Validar população, isolamento, rota e equipe por turno.",
+ fonte:"Dados pendentes",cobre:[],cobertoPor:null,
  areas:["Oficina Subconjunto Salobo"]},
 
 {pe:"PE-12",nome:"Heliponto",lat:-5.999042,lon:-49.900756,
  area:"Dellavolpe",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
- obs:"Coberto pelo PE-14 (Della Volpe). Distância: ~117m.",
- cobre:[],cobertoPor:"PE-14",
+ nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
+ obs:"Heliponto exige validação operacional própria. Não consta correspondência específica na planilha.",
+ fonte:"Dados pendentes",cobre:[],cobertoPor:null,
  areas:["Heliponto"]},
 
 {pe:"PE-13",nome:"ETE",lat:-5.999150,lon:-49.901772,
  area:"Dellavolpe",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
- obs:"Coberto pelo PE-14 (DV). Ponto extremo oeste.",
- cobre:[],cobertoPor:"PE-14",
+ nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
+ obs:"Não consta correspondência específica na planilha. Levantar risco do processo e equipe por turno.",
+ fonte:"Dados pendentes",cobre:[],cobertoPor:null,
  areas:["ETE Sanitária"]},
 
 {pe:"PE-14",nome:"Della Volpe",lat:-6.000050,lon:-49.900617,
  area:"Dellavolpe",risco:"BAIXO",cls:"D-1",popFixa:25,
- nec:2,quadro:7,ativos:0,venc:7,status:"CRÍTICO",
- obs:"CRÍTICO: TODOS 7 VENCIDOS. Reciclagem URGENTE.",
- cobre:["PE-12","PE-13","PE-16"],cobertoPor:null,
+ nec:3,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
+ obs:"A empresa/local Della Volpe não aparece na planilha recebida. Não manter o número antigo sem reconciliação documental.",
+ fonte:"Sem correspondência em Brigada.xlsx",cobre:[],cobertoPor:null,
  areas:["Base Della Volpe","Heliponto (PE-12)","ETE (PE-13)","Estac. Equipamentos (PE-16)"]},
 
 {pe:"PE-15",nome:"Galpão do Níquel",lat:-6.000783,lon:-49.899944,
  area:"Níquel Operação",risco:"MÉDIO",cls:"I-2",popFixa:8,
- nec:2,quadro:7,ativos:7,venc:0,status:"CONFORME",
- obs:"7 brigadistas. Superávit +5. Pop. fixa ~8 por turno.",
- cobre:["PE-11"],cobertoPor:null,
+ nec:5,quadro:9,ativos:9,venc:0,futuro:0,status:"ATENÇÃO",
+ obs:"9 treinamentos vigentes. O quantitativo total atende preliminarmente, mas deve ser confirmado separadamente por turno e por presença real.",
+ turnos:"Vigentes: A = 2; B = 4; C = 3",fonte:"Brigada.xlsx — NÍQUEL OPERAÇÃO",
+ cobre:[],cobertoPor:null,
  areas:["Galpão do Níquel","Subconjunto SLB (PE-11)"]},
 
 {pe:"PE-16",nome:"Estac. Equipamentos",lat:-6.002078,lon:-49.900150,
  area:"Dellavolpe",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
- obs:"Coberto pelo PE-14 (Della Volpe).",
- cobre:[],cobertoPor:"PE-14",
+ nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
+ obs:"Sem correspondência específica na planilha. Estacionamento não pode ser considerado coberto somente pela proximidade.",
+ fonte:"Dados pendentes",cobre:[],cobertoPor:null,
  areas:["Estacionamento de equipamentos"]},
 
 {pe:"PE-17",nome:"Descarga Carvão",lat:-6.002736,lon:-49.898853,
  area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
- obs:"Coberto pelo PE-18 (Multiserv). Distância: ~79m.",
- cobre:[],cobertoPor:"PE-18",
+ nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
+ obs:"Descarga de carvão exige avaliação própria de processo, poeiras, equipamentos e carga de incêndio.",
+ fonte:"Dados pendentes",cobre:[],cobertoPor:null,
  areas:["Estação de Descarga de Carvão"]},
 
 {pe:"PE-18",nome:"Base Multiserv",lat:-6.002142,lon:-49.899406,
  area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:20,
- nec:2,quadro:6,ativos:6,venc:0,status:"CONFORME",
- obs:"6 brigadistas. Superávit +4. Cobre 6 PEs adjacentes.",
- cobre:["PE-09","PE-10","PE-17","PE-19","PE-20","PE-21"],cobertoPor:null,
+ nec:3,quadro:7,ativos:7,venc:0,futuro:0,status:"ATENÇÃO",
+ obs:"Planilha registra 7 vigentes em ÁREA 2/MULTSERV. Confirmar formalmente que ÁREA 2 corresponde a esta base. Não estender automaticamente o efetivo aos demais PEs.",
+ turnos:"Vigentes: ADM = 1; A = 3; B = 3",fonte:"Brigada.xlsx — ÁREA 2 (correspondência provisória)",
+ cobre:[],cobertoPor:null,
  areas:["Base Multiserv","ETEI (PE-09)","ETA (PE-10)","Desc. Carvão (PE-17)","Pátio Carvão (PE-19)","SHAFT (PE-20)","Pátio Materiais (PE-21)"]},
 
 {pe:"PE-19",nome:"Pátio Carvão",lat:-6.001450,lon:-49.899497,
  area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
- obs:"Coberto pelo PE-18 (Multiserv).",
- cobre:[],cobertoPor:"PE-18",
+ nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
+ obs:"Pátio de carvão requer classificação baseada no processo e na carga de incêndio; não considerar cobertura automática pelo PE-18.",
+ fonte:"Dados pendentes",cobre:[],cobertoPor:null,
  areas:["Pátio de Carvão"]},
 
 {pe:"PE-20",nome:"SHAFT",lat:-6.002331,lon:-49.898806,
  area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
- obs:"Coberto pelo PE-18 (Multiserv).",
- cobre:[],cobertoPor:"PE-18",
+ nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
+ obs:"Informar atividade, acesso, população e riscos específicos do SHAFT antes de definir brigada e ponto de encontro.",
+ fonte:"Dados pendentes",cobre:[],cobertoPor:null,
  areas:["SHAFT"]},
 
 {pe:"PE-21",nome:"Pátio de Materiais",lat:-6.001478,lon:-49.899044,
  area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
- obs:"Coberto pelo PE-18 (Multiserv).",
- cobre:[],cobertoPor:"PE-18",
+ nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
+ obs:"Classificar os materiais armazenados e a carga de incêndio antes de dimensionar. Proximidade não comprova cobertura.",
+ fonte:"Dados pendentes",cobre:[],cobertoPor:null,
  areas:["Pátio de Materiais"]},
 
 {pe:"PE-22",nome:"Subestação",lat:-6.000836,lon:-49.898669,
- area:"Subestação Manutenção",risco:"ALTO",cls:"I-3",popFixa:5,
- nec:2,quadro:0,ativos:0,venc:0,status:"COBERTO",
- obs:"RISCO ALTO I-3. Coberto por PE-23 (19 brigadistas).",
- cobre:[],cobertoPor:"PE-23",
+ area:"Subestação Manutenção",risco:"ALTO",cls:"M-3",popFixa:5,
+ nec:6,quadro:3,ativos:3,venc:0,futuro:0,status:"CRÍTICO",
+ obs:"Classificação corrigida provisoriamente para M-3 — central de comunicação e energia. Existem 3 vigentes, todos turno A/diurno. Necessidade preliminar: 6; validar PSCIE, carga de incêndio e nível de treinamento.",
+ turnos:"Vigentes: A/diurno = 3",fonte:"Brigada.xlsx — SUBESTAÇÃO MANUTENÇÃO",
+ cobre:[],cobertoPor:null,
  areas:["Subestação elétrica"]},
 
 {pe:"PE-23",nome:"Escritório Central",lat:-6.000694,lon:-49.898503,
  area:"Escritório Central Vale",risco:"BAIXO",cls:"D-1",popFixa:30,
- nec:2,quadro:19,ativos:19,venc:0,status:"CONFORME",
- obs:"19 brigadistas. Superávit +17. Cobre 5 áreas/prédios.",
- cobre:["PE-22","PE-24"],cobertoPor:null,
+ nec:3,quadro:9,ativos:8,venc:0,futuro:1,status:"ATENÇÃO",
+ obs:"8 treinamentos vigentes e 1 treinamento com data futura. Quantitativo total atende preliminarmente, mas deve ser validado por turno; não usar o escritório para substituir o dimensionamento da subestação.",
+ turnos:"Vigentes: A = 3; B = 4; C = 1; ADM futuro = 1",fonte:"Brigada.xlsx — ESCRITÓRIO CENTRAL VALE",
+ cobre:[],cobertoPor:null,
  areas:["Escritório Central","SESMT","Ferramentaria","Laboratório Elétrico","Subestação (PE-22)","Dojô (PE-24)"]},
 
 {pe:"PE-24",nome:"Dojô",lat:-6.000403,lon:-49.898219,
  area:"Escritório Central Vale",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,status:"COBERTO",
- obs:"Coberto pelo PE-23 (Escritório). Distância: ~45m.",
- cobre:[],cobertoPor:"PE-23",
+ nec:0,quadro:0,ativos:0,venc:0,futuro:0,status:"SEM DADO",
+ obs:"Sem população e uso informados. A distância de 45 m até o escritório não substitui o dimensionamento próprio.",
+ fonte:"Dados pendentes",cobre:[],cobertoPor:null,
  areas:["Pátio Dojô"]},
 
 {pe:"PE-25",nome:"Base de Emergência",lat:-6.001447,lon:-49.900342,
  area:"S.O.S.",risco:"BAIXO",cls:"D-1",popFixa:20,
- nec:2,quadro:5,ativos:5,venc:0,status:"BASE",
- obs:"5 brigadistas básicos + 15 Bombeiros Civis (Turnos A/B/C/D). Base principal de resposta a emergências para todo o terminal.",
+ nec:3,quadro:5,ativos:5,venc:0,futuro:0,status:"BASE",
+ obs:"Os 15 bombeiros civis e 5 brigadistas básicos não constam na Brigada.xlsx recebida. Manter apenas após conferir escala por turno, credenciais e fonte documental própria.",
+ turnos:"Escala A/B/C/D — quantitativo simultâneo não informado",fonte:"Informação anterior; não validada pela planilha atual",
  cobre:[],cobertoPor:null,
  areas:["Base de Emergência","Container Materiais","Ambulância","Viaturas (SE-11, HILUX)"]}
 ];
@@ -326,7 +357,7 @@ function cor(s){
   if(s==='CRÍTICO') return '#f44336';
   if(s==='ATENÇÃO') return '#FF9800';
   if(s==='BASE') return '#1E88E5';
-  return '#78909C';
+  return '#616161';
 }
 
 function riscoCor(r){
@@ -336,7 +367,10 @@ function riscoCor(r){
 }
 
 const map = L.map('map',{zoomControl:false}).setView([-6.001,-49.898],17);
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}).addTo(map);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
+  maxZoom:19,
+  attribution:'Tiles &copy; Esri — Source: Esri, Earthstar Geographics e comunidade GIS'
+}).addTo(map);
 L.control.zoom({position:'bottomright'}).addTo(map);
 
 const markers = [];
@@ -382,8 +416,7 @@ function showInfo(i){
   document.getElementById('pSub').textContent = d.area + ' | ' + d.cls + ' | Risco ' + d.risco;
 
   const sColor = cor(d.status);
-  const statusLabel = d.status === 'COBERTO' ? 'COBERTO POR ' + d.cobertoPor :
-                      d.status === 'SEM QUADRO' ? 'SEM QUADRO' : d.status;
+  const statusLabel = d.status === 'SEM DADO' ? 'DADOS NÃO CONCILIADOS' : d.status;
   document.getElementById('pStatus').innerHTML =
     `<div class="panel-status" style="background:${sColor};color:#fff">${statusLabel}</div>
      <span class="panel-status" style="background:${riscoCor(d.risco)};color:#fff;margin-left:6px">${d.risco}</span>`;
@@ -391,73 +424,35 @@ function showInfo(i){
   let html = '';
 
   // Efetivo
-  html += '<div class="panel-section"><h3>EFETIVO IT08</h3>';
+  html += '<div class="panel-section"><h3>EFETIVO PRELIMINAR</h3>';
   if(d.pe === 'PE-25'){
-    html += '<div class="pr"><span class="k">Brigadistas básicos</span><span class="v" style="color:#4CAF50">5</span></div>';
-    html += '<div class="pr"><span class="k">Bombeiros Civis (4 turnos)</span><span class="v" style="color:#1E88E5">15</span></div>';
-    html += '<div class="pr"><span class="k">Total na base</span><span class="v" style="color:#FFD600">20</span></div>';
+    html += '<div class="pr"><span class="k">Brigadistas básicos informados</span><span class="v">5</span></div>';
+    html += '<div class="pr"><span class="k">Bombeiros civis informados</span><span class="v">15</span></div>';
+    html += '<div class="warning-box">Os números da Base de Emergência não constam na planilha recebida e não representam presença simultânea.</div>';
   } else if(d.nec > 0){
-    html += `<div class="pr"><span class="k">Necessários (IT08)</span><span class="v">${d.nec}</span></div>`;
-    html += `<div class="pr"><span class="k">No quadro</span><span class="v">${d.quadro}</span></div>`;
-    html += `<div class="pr"><span class="k">Ativos</span><span class="v" style="color:${d.ativos>=d.nec?'#4CAF50':'#f44336'}">${d.ativos}</span></div>`;
+    html += `<div class="pr"><span class="k">Mínimo preliminar</span><span class="v">${d.nec}</span></div>`;
+    html += `<div class="pr"><span class="k">Registros na planilha</span><span class="v">${d.quadro}</span></div>`;
+    html += `<div class="pr"><span class="k">Treinamentos vigentes</span><span class="v" style="color:${d.ativos>=d.nec?'#4CAF50':'#f44336'}">${d.ativos}</span></div>`;
     if(d.venc > 0) html += `<div class="pr"><span class="k">Vencidos</span><span class="v" style="color:#FF9800">${d.venc}</span></div>`;
+    if((d.futuro||0) > 0) html += `<div class="pr"><span class="k">Treinamentos futuros</span><span class="v" style="color:#FF9800">${d.futuro}</span></div>`;
     const saldo = d.ativos - d.nec;
-    html += `<div class="pr"><span class="k">Saldo</span><span class="v" style="color:${saldo>=0?'#4CAF50':'#f44336'}">${saldo>=0?'+':''}${saldo}</span></div>`;
+    html += `<div class="pr"><span class="k">Saldo preliminar</span><span class="v" style="color:${saldo>=0?'#4CAF50':'#f44336'}">${saldo>=0?'+':''}${saldo}</span></div>`;
   } else {
-    html += `<div style="font-size:11px;color:#aaa;padding:4px 0">${d.obs}</div>`;
+    html += '<div style="font-size:11px;color:#aaa;padding:4px 0">Dimensionamento pendente de dados.</div>';
   }
   if(d.popFixa > 0) html += `<div class="pr"><span class="k">Pop. fixa estimada</span><span class="v">${d.popFixa}</span></div>`;
+  if(d.turnos) html += `<div class="data-note"><b>Distribuição informada:</b> ${d.turnos}</div>`;
   html += '</div>';
 
-  // Áreas cobertas
-  html += '<div class="panel-section"><h3>ÁREAS COBERTAS</h3>';
+  html += `<div class="warning-box">${d.obs}</div>`;
+  if(d.fonte) html += `<div class="data-note"><b>Fonte:</b> ${d.fonte}</div>`;
+
+  // Áreas relacionadas ao ponto de encontro (não implica cobertura legal)
+  html += '<div class="panel-section"><h3>ÁREAS RELACIONADAS AO PE</h3>';
   d.areas.forEach(a => {
     html += `<div class="cov-area">• ${a}</div>`;
   });
   html += '</div>';
-
-  // PEs que este cobre
-  if(d.cobre.length > 0){
-    html += '<div class="panel-section"><h3>PEs SOB COBERTURA</h3><div>';
-    d.cobre.forEach(pe => {
-      const ci = PEINDEX[pe];
-      const cd = DATA[ci];
-      html += `<span class="cov-tag">${pe} ${cd.nome}</span>`;
-    });
-    html += '</div></div>';
-
-    // Desenhar linhas de cobertura
-    d.cobre.forEach(pe => {
-      const ci = PEINDEX[pe];
-      const cd = DATA[ci];
-      const line = L.polyline(
-        [[d.lat,d.lon],[cd.lat,cd.lon]],
-        {color:'#FFD600',weight:2.5,dashArray:'6,4',opacity:0.8}
-      ).addTo(map);
-      const dist = Math.round(map.distance([d.lat,d.lon],[cd.lat,cd.lon]));
-      line.bindTooltip(dist+'m',{permanent:true,direction:'center',
-        className:'pin-label',offset:[0,-8]});
-      covLines.push(line);
-    });
-  }
-
-  // Se é coberto por outro PE
-  if(d.cobertoPor){
-    const ci = PEINDEX[d.cobertoPor];
-    const cd = DATA[ci];
-    html += `<div class="panel-section"><h3>COBERTO POR</h3>`;
-    html += `<span class="cov-tag" style="font-size:12px;padding:4px 12px">${d.cobertoPor} — ${cd.nome} (${cd.ativos} ativos)</span>`;
-    html += '</div>';
-
-    const line = L.polyline(
-      [[d.lat,d.lon],[cd.lat,cd.lon]],
-      {color:'#FFD600',weight:2.5,dashArray:'6,4',opacity:0.8}
-    ).addTo(map);
-    const dist = Math.round(map.distance([d.lat,d.lon],[cd.lat,cd.lon]));
-    line.bindTooltip(dist+'m',{permanent:true,direction:'center',
-      className:'pin-label',offset:[0,-8]});
-    covLines.push(line);
-  }
 
   // RESPALDO LEGAL
   html += '<div class="panel-section"><h3>RESPALDO LEGAL</h3>';
@@ -466,16 +461,18 @@ function showInfo(i){
   const clsDesc = {
     'D-1':'Serviços profissionais (escritórios, salas técnicas)',
     'D-2':'Oficinas e serviços de reparos',
-    'I-1':'Industrial — risco baixo',
-    'I-2':'Industrial — risco moderado',
-    'I-3':'Industrial — risco alto (elétrico/químico)',
-    'J-1':'Depósito de materiais incombustíveis'
+    'F-8':'Local para refeição',
+    'I-1':'Industrial — risco a validar pela carga de incêndio',
+    'I-2':'Industrial — risco a validar pela carga de incêndio',
+    'I-3':'Industrial — carga de incêndio elevada',
+    'J-1':'Depósito de materiais incombustíveis',
+    'M-3':'Central de comunicação e energia'
   };
 
-  html += '<div class="lei-box"><b>IT-08 CBMPA</b> · Classificação <b style="color:#FFD600">' + d.cls + '</b> — ' + (clsDesc[d.cls]||d.cls) + '<br>';
-  if(d.nec > 0) html += 'Mín. <b>' + d.nec + '</b> brigadistas · ';
-  else html += 'Coberto por PE adjacente (§ 5.2.4) · ';
-  html += '<b>NBR 14276</b> reciclagem anual';
+  html += '<div class="lei-box"><b>IT-08 CBMPA</b> · Enquadramento preliminar <b style="color:#FFD600">' + d.cls + '</b> — ' + (clsDesc[d.cls]||d.cls) + '<br>';
+  if(d.nec > 0) html += 'Estimativa inicial: <b>' + d.nec + '</b> brigadistas · ';
+  else html += 'Dimensionamento pendente · ';
+  html += 'validar por edificação, pavimento/compartimento, população e turno';
   if(d.venc > 0) html += ' · <b style="color:#FF9800">⚠ ' + d.venc + ' vencido(s)</b>';
   html += '</div>';
 
@@ -483,20 +480,13 @@ function showInfo(i){
   html += '<div class="lei-box"><b>NR-23</b> · Saídas de emergência, sinalização e combate a incêndio</div>';
 
   // NR específicas (só quando aplica)
-  if(d.risco === 'ALTO' || d.cls === 'I-3')
-    html += '<div class="lei-box"><b>NR-10</b> · Risco elétrico elevado — controle especial</div>';
-
-  if(d.risco === 'MÉDIO' || d.cls === 'I-2')
-    html += '<div class="lei-box"><b>NR-20</b> · Risco moderado — treinamento p/ produtos perigosos</div>';
+  if(d.cls === 'M-3')
+    html += '<div class="lei-box"><b>NR-10</b> · Aplicável aos trabalhadores que interagem com instalações ou serviços em eletricidade; validar autorizações e procedimentos.</div>';
 
   if(d.pe === 'PE-25')
-    html += '<div class="lei-box"><b>Lei 11.901</b> + <b>NBR 14608</b> · 15 BM Civis (4 turnos, formação 210h)</div>';
+    html += '<div class="lei-box"><b>Lei 11.901/2009</b> + normas técnicas vigentes · conferir escala, qualificação, capacitações específicas e documentação de cada bombeiro civil.</div>';
 
-  if(d.cobre.length > 0)
-    html += '<div class="lei-box"><b>§ 5.2.4</b> · Cobertura conjunta — cobre ' + d.cobre.length + ' PE(s) adjacente(s)</div>';
-
-  if(d.cobertoPor)
-    html += '<div class="lei-box"><b>§ 5.2.4</b> · Coberto pelo ' + d.cobertoPor + '</div>';
+  html += '<div class="lei-box"><b>Nota técnica</b> · A distância entre PEs não substitui o dimensionamento da brigada por setor, turno e risco.</div>';
 
   html += '</div>';
 
