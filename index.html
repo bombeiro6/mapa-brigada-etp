@@ -123,24 +123,21 @@ body{font-family:Arial,sans-serif;background:#111}
 <p>Terminal de Parauapebas (ETP) — Vale Metais Basicos</p>
 <div class="nums">
   <div class="nb"><div class="nb-v">24</div><div class="nb-l">Pontos de Encontro</div></div>
-  <div class="nb"><div class="nb-v" id="nReg">—</div><div class="nb-l">Registros</div></div>
-  <div class="nb"><div class="nb-v" id="nVig" style="color:#4CAF50">—</div><div class="nb-l">Vigentes</div></div>
-  <div class="nb"><div class="nb-v" id="nVenc" style="color:#FF9800">—</div><div class="nb-l">Vencidos</div></div>
-  <div class="nb"><div class="nb-v" id="nFut" style="color:#90CAF9">—</div><div class="nb-l">Futuros</div></div>
+  <div class="nb"><div class="nb-v" id="nVig" style="color:#4CAF50">—</div><div class="nb-l">Brigadistas Ativos</div></div>
 </div>
 </div>
 
 <div class="legend">
-<h3>SITUACAO IT08</h3>
-<div class="lg-i"><div class="lg-d" style="background:#4CAF50"></div> Atendimento preliminar — vigentes >= necessarios</div>
-<div class="lg-i"><div class="lg-d" style="background:#FF9800"></div> Atencao — brigadistas com curso vencido</div>
-<div class="lg-i"><div class="lg-d" style="background:#f44336"></div> Critico — todos vencidos ou deficit</div>
-<div class="lg-i"><div class="lg-d" style="background:#1E88E5"></div> Base de Emergencia (BM Civis)</div>
-<div class="lg-i"><div class="lg-d" style="background:#78909C"></div> Area relacionada a PE adjacente</div>
+<h3>LEGENDA</h3>
+<div class="lg-i"><div class="lg-d" style="background:#4CAF50"></div> Brigadistas ativos suficientes</div>
+<div class="lg-i"><div class="lg-d" style="background:#FF9800"></div> Brigadistas com curso vencido</div>
+<div class="lg-i"><div class="lg-d" style="background:#f44336"></div> Sem brigadistas ativos</div>
+<div class="lg-i"><div class="lg-d" style="background:#1E88E5"></div> Base de Emergencia</div>
+<div class="lg-i"><div class="lg-d" style="background:#78909C"></div> Vinculado a outro PE</div>
 </div>
 
 <div class="privacy-bar">
-  <span id="csvStatus">Carregando dados da planilha...</span> &middot; Dados anonimos — sem nome, CPF ou telefone
+  <span id="csvStatus">Carregando dados...</span>
 </div>
 
 <button class="btn-fit" onclick="fitAll()">Ver tudo</button>
@@ -382,10 +379,7 @@ function computeTotals(){
 
 function updateTitleBar(){
   var t = computeTotals();
-  document.getElementById('nReg').textContent = t.reg;
   document.getElementById('nVig').textContent = t.vig;
-  document.getElementById('nVenc').textContent = t.ven;
-  document.getElementById('nFut').textContent = t.fut;
 }
 
 /* ============ CSV PARSER ============ */
@@ -572,15 +566,17 @@ function showInfo(i){
   if(d.popFixa>0) html+='<div class="pr"><span class="k">Pop. fixa estimada</span><span class="v">'+d.popFixa+'</span></div>';
   html+='</div>';
 
-  /* AREAS */
-  html+='<div class="panel-section"><h3>AREAS RELACIONADAS AO PE</h3>';
-  d.areas.forEach(function(a){
-    html+='<div class="cov-area">'+a+'</div>';
-  });
-  html+='</div>';
+  /* AREAS — somente PEs com populacao */
+  if(d.popFixa>0){
+    html+='<div class="panel-section"><h3>AREAS RELACIONADAS AO PE</h3>';
+    d.areas.forEach(function(a){
+      html+='<div class="cov-area">'+a+'</div>';
+    });
+    html+='</div>';
+  }
 
-  /* PEs que este cobre */
-  if(d.cobre.length>0){
+  /* PEs que este cobre — somente PEs com populacao */
+  if(d.popFixa>0 && d.cobre.length>0){
     html+='<div class="panel-section"><h3>PEs SOB COBERTURA</h3><div>';
     d.cobre.forEach(function(pe){
       var ci=PEINDEX[pe];
@@ -603,8 +599,8 @@ function showInfo(i){
     });
   }
 
-  /* Vinculado a */
-  if(d.cobertoPor){
+  /* Vinculado a — somente PEs com populacao */
+  if(d.popFixa>0 && d.cobertoPor){
     var ci=PEINDEX[d.cobertoPor];
     var cd=DATA[ci];
     html+='<div class="panel-section"><h3>VINCULADO A</h3>';
@@ -654,10 +650,10 @@ function showInfo(i){
   if(d.pe==='PE-25')
     html+='<div class="lei-box"><b>Lei 11.901</b> + <b>NBR 14608</b> — 15 BM Civis (4 turnos)</div>';
 
-  if(d.cobre.length>0)
+  if(d.popFixa>0 && d.cobre.length>0)
     html+='<div class="lei-box"><b>IT-08</b> — Cobertura conjunta — '+d.cobre.length+' PE(s) adjacente(s)</div>';
 
-  if(d.cobertoPor)
+  if(d.popFixa>0 && d.cobertoPor)
     html+='<div class="lei-box"><b>IT-08</b> — Vinculado ao '+d.cobertoPor+'</div>';
 
   html+='</div>';
