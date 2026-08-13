@@ -3,26 +3,79 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cobertura de Brigada IT08 — ETP Parauapebas</title>
+<title>Gestão de Brigada IT08 — ETP Parauapebas (v2)</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:Arial,sans-serif;background:#111}
+html{color-scheme:dark}
+body{font-family:Arial,sans-serif;background:#111;color:#fff}
 #map{width:100%;height:100vh}
 
-.title-bar{
-  position:fixed;top:0;left:50%;transform:translateX(-50%);
-  background:rgba(0,58,112,0.95);color:#fff;padding:10px 24px;
-  border-radius:0 0 12px 12px;z-index:1000;text-align:center;
-  backdrop-filter:blur(8px);border-bottom:3px solid #FFD600;
+/* ===== BARRA DE NAVEGACAO SUPERIOR ===== */
+.nav-bar{
+  position:fixed;top:0;left:0;right:0;height:52px;
+  background:rgba(0,58,112,0.97);z-index:1200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;border-bottom:3px solid #FFD600;
+  backdrop-filter:blur(8px);
 }
-.title-bar h1{font-size:13px;color:#FFD600;letter-spacing:1.5px}
-.title-bar p{font-size:10px;color:#ccc;margin-top:2px}
-.title-bar .nums{display:flex;gap:20px;justify-content:center;margin-top:6px}
-.title-bar .nb{text-align:center}
-.title-bar .nb-v{font-size:20px;font-weight:800;color:#fff}
-.title-bar .nb-l{font-size:8px;color:#aaa;text-transform:uppercase;letter-spacing:0.5px}
+.nav-brand{display:flex;flex-direction:column;line-height:1.1}
+.nav-brand b{font-size:12px;color:#FFD600;letter-spacing:1px}
+.nav-brand span{font-size:9px;color:#bbb}
+.nav-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.nav-btn{
+  background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,214,0,0.3);
+  padding:7px 12px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:0.4px;transition:all 0.15s;white-space:nowrap;
+}
+.nav-btn:hover{background:rgba(255,214,0,0.18)}
+.nav-btn.active{background:#FFD600;color:#003A70}
+.nav-btn.pdf{border-color:rgba(76,175,80,0.5);color:#4CAF50}
+.nav-btn.pdf:hover{background:rgba(76,175,80,0.18)}
+
+/* ===== BANNER DE ALERTAS ===== */
+.alert-bar{
+  position:fixed;top:52px;left:0;right:0;z-index:1150;
+  background:rgba(244,67,54,0.92);color:#fff;font-size:11px;font-weight:600;
+  padding:6px 14px;text-align:center;display:none;
+}
+.alert-bar.warn{background:rgba(255,152,0,0.92)}
+.alert-bar b{color:#fff}
+
+/* ===== BARRA DE FILTROS ===== */
+.filter-bar{
+  position:fixed;top:52px;left:0;right:0;z-index:1100;
+  background:rgba(0,30,60,0.95);padding:8px 14px;
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  border-bottom:1px solid rgba(255,214,0,0.15);
+  transition:top 0.2s;
+}
+.filter-bar.pushed{top:80px}
+.filter-bar select,.filter-bar input{
+  background:#0b2c50;color:#fff;border:1px solid rgba(255,214,0,0.35);
+  color-scheme:dark;
+  padding:6px 9px;border-radius:7px;font-size:11px;outline:none;
+}
+.filter-bar input{min-width:150px}
+.filter-bar select option{background:#0b2c50;color:#fff}
+.filter-bar input::placeholder{color:#9db4cc}
+.filter-bar label{font-size:9px;color:#FFD600;text-transform:uppercase;letter-spacing:0.5px;margin-right:2px}
+.filter-clear{
+  background:rgba(255,214,0,0.12);color:#FFD600;border:1px solid rgba(255,214,0,0.3);
+  padding:6px 10px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;
+}
+.filter-count{font-size:10px;color:#bbb;margin-left:auto}
+
+/* ===== TOTAIS TOPO (mini) ===== */
+.top-nums{display:flex;gap:16px;margin-left:14px}
+.top-nums .nb{text-align:center}
+.top-nums .nb-v{font-size:18px;font-weight:800;color:#fff;line-height:1}
+.top-nums .nb-l{font-size:7px;color:#aaa;text-transform:uppercase;letter-spacing:0.4px}
 
 .legend{
   position:fixed;bottom:30px;left:12px;
@@ -42,8 +95,7 @@ body{font-family:Arial,sans-serif;background:#111}
 }
 
 .pe-marker{background:none;border:none}
-
-.pin-wrap{display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.2s}
+.pin-wrap{display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.2s,opacity 0.2s}
 .pin-wrap:hover{transform:translateY(-4px)}
 .pin-head{
   padding:4px 10px;border-radius:6px;font-size:12px;font-weight:800;
@@ -58,90 +110,178 @@ body{font-family:Arial,sans-serif;background:#111}
   white-space:nowrap;text-align:center;max-width:100px;
   overflow:hidden;text-overflow:ellipsis;
 }
+.pin-dim{opacity:0.12 !important;filter:grayscale(0.85) !important;pointer-events:none}
 
 .panel{
-  position:fixed;top:50%;right:14px;transform:translateY(-50%);
+  position:fixed;top:90px;right:14px;
   background:rgba(0,30,60,0.96);color:#fff;
-  width:320px;border-radius:14px;z-index:1001;
+  width:340px;border-radius:14px;z-index:1101;
   display:none;overflow:hidden;
   border:1px solid rgba(255,214,0,0.3);
   box-shadow:0 8px 30px rgba(0,0,0,0.5);
-  max-height:85vh;overflow-y:auto;
+  max-height:82vh;overflow-y:auto;
 }
-.panel-header{
-  background:rgba(0,0,0,0.3);padding:14px 18px;
-  border-bottom:2px solid #FFD600;
-}
+.panel-header{background:rgba(0,0,0,0.3);padding:14px 18px;border-bottom:2px solid #FFD600}
 .panel-header h2{font-size:18px;font-weight:800;color:#FFD600;letter-spacing:1px}
 .panel-header .sub{font-size:12px;color:#ccc;margin-top:2px}
 .panel-body{padding:14px 18px}
-.panel-status{
-  display:inline-block;padding:4px 14px;border-radius:20px;
-  font-size:11px;font-weight:700;letter-spacing:0.5px;
-}
+.panel-status{display:inline-block;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.5px}
 .panel-section{margin-top:14px}
 .panel-section h3{font-size:11px;color:#FFD600;letter-spacing:1px;margin-bottom:6px;border-bottom:1px solid rgba(255,214,0,0.15);padding-bottom:4px}
 .pr{display:flex;justify-content:space-between;padding:4px 0;font-size:12px}
 .pr .k{color:#aaa}
 .pr .v{font-weight:700}
-.cov-tag{
-  display:inline-block;background:rgba(255,214,0,0.12);
-  border:1px solid rgba(255,214,0,0.25);
-  padding:2px 8px;border-radius:4px;font-size:10px;
-  margin:2px 3px 2px 0;color:#FFD600;font-weight:600;
-}
-.cov-area{
-  font-size:11px;color:#ccc;padding:3px 0;
-  border-bottom:1px solid rgba(255,255,255,0.05);
-}
-.close-btn{
-  margin-top:14px;background:rgba(255,214,0,0.1);color:#FFD600;
-  border:1px solid rgba(255,214,0,0.3);padding:8px;border-radius:8px;
-  cursor:pointer;font-size:12px;width:100%;font-weight:600;
-}
+.cov-tag{display:inline-block;background:rgba(255,214,0,0.12);border:1px solid rgba(255,214,0,0.25);padding:2px 8px;border-radius:4px;font-size:10px;margin:2px 3px 2px 0;color:#FFD600;font-weight:600}
+.cov-area{font-size:11px;color:#ccc;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.close-btn{margin-top:14px;background:rgba(255,214,0,0.1);color:#FFD600;border:1px solid rgba(255,214,0,0.3);padding:8px;border-radius:8px;cursor:pointer;font-size:12px;width:100%;font-weight:600}
 .close-btn:hover{background:rgba(255,214,0,0.2)}
-.lei-box{
-  background:rgba(255,214,0,0.08);border:1px solid rgba(255,214,0,0.15);
-  border-radius:6px;padding:8px 10px;margin:4px 0;font-size:10px;line-height:1.5;
-}
+.lei-box{background:rgba(255,214,0,0.08);border:1px solid rgba(255,214,0,0.15);border-radius:6px;padding:8px 10px;margin:4px 0;font-size:10px;line-height:1.5}
 .lei-box b{color:#FFD600;font-size:10px}
 .lei-box span{color:#ccc}
 
-.btn-fit{
-  position:fixed;bottom:30px;right:12px;z-index:1000;
-  background:rgba(0,30,60,0.95);color:#FFD600;
-  border:1px solid rgba(255,214,0,0.3);
-  padding:8px 14px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;
+/* ===== BRIGADISTAS NOMINAIS ===== */
+.brig-table{width:100%;border-collapse:collapse;font-size:10px;margin-top:4px}
+.brig-table th{color:#FFD600;text-align:left;padding:3px 4px;border-bottom:1px solid rgba(255,214,0,0.2);font-size:9px}
+.brig-table td{padding:3px 4px;border-bottom:1px solid rgba(255,255,255,0.06);color:#ddd}
+.brig-venc{color:#f44336 !important;font-weight:700}
+.brig-avencer{color:#FF9800 !important;font-weight:700}
+
+/* ===== FOTOS ===== */
+.photo-upload{margin-top:6px}
+.photo-upload input[type=file]{font-size:10px;color:#ccc;width:100%}
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.photo-card{background:rgba(0,0,0,0.3);border:1px solid rgba(255,214,0,0.15);border-radius:6px;overflow:hidden;position:relative}
+.photo-card img{width:100%;height:80px;object-fit:cover;display:block}
+.photo-card .cap{font-size:8px;color:#ccc;padding:3px 4px}
+.photo-card .rm{position:absolute;top:2px;right:2px;background:rgba(244,67,54,0.9);color:#fff;border:none;border-radius:4px;width:16px;height:16px;cursor:pointer;font-size:10px;line-height:1}
+.photo-legend-in{width:100%;background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,214,0,0.2);border-radius:4px;padding:3px 5px;font-size:9px;margin-top:4px}
+
+.btn-fit{position:fixed;bottom:30px;right:12px;z-index:1000;background:rgba(0,30,60,0.95);color:#FFD600;border:1px solid rgba(255,214,0,0.3);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600}
+.btn-pdf-pe{width:100%;margin-top:10px;background:rgba(76,175,80,0.15);color:#4CAF50;border:1px solid rgba(76,175,80,0.4);padding:9px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700}
+.btn-pdf-pe:hover{background:rgba(76,175,80,0.28)}
+
+/* ===== DASHBOARD ===== */
+.dashboard{
+  position:fixed;top:52px;left:0;right:0;bottom:0;z-index:1050;
+  background:#0c1622;overflow-y:auto;display:none;padding:20px;
+  transition:top 0.2s;
 }
+body.has-alert .dashboard{top:82px}
+.dash-title{font-size:16px;color:#FFD600;letter-spacing:1px;margin-bottom:4px}
+.dash-sub{font-size:11px;color:#aaa;margin-bottom:16px}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:rgba(0,30,60,0.7);border:1px solid rgba(255,214,0,0.15);border-radius:12px;padding:14px 16px}
+.kpi .v{font-size:30px;font-weight:800;line-height:1}
+.kpi .l{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-top:4px}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.dash-card{background:rgba(0,30,60,0.7);border:1px solid rgba(255,214,0,0.15);border-radius:12px;padding:16px}
+.dash-card h3{font-size:12px;color:#FFD600;letter-spacing:1px;margin-bottom:12px}
+.dash-card canvas{max-height:240px}
+.rank-row{display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+.rank-row .pe{color:#fff;font-weight:600}
+.rank-row .def{font-weight:800}
+.venc-row{display:flex;justify-content:space-between;font-size:11px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+@media(max-width:760px){
+  .dash-grid{grid-template-columns:1fr}
+  .panel{width:calc(100% - 24px);right:12px;left:12px}
+  .top-nums{display:none}
+  .nav-brand span{display:none}
+}
+
+/* ===== CONTAINER OCULTO PARA PDF ===== */
+#reportHolder{position:fixed;left:-10000px;top:0;background:#fff;color:#111;width:800px}
+.rep{padding:36px 40px;font-family:Arial,sans-serif;color:#111;background:#fff;width:800px}
+.rep-head{border-bottom:4px solid #003A70;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start}
+.rep-head h1{font-size:18px;color:#003A70}
+.rep-head .meta{font-size:10px;color:#555;text-align:right;line-height:1.5}
+.rep h2{font-size:13px;color:#003A70;border-bottom:1px solid #ccc;padding-bottom:4px;margin:18px 0 8px}
+.rep table{width:100%;border-collapse:collapse;font-size:11px;margin:6px 0}
+.rep th,.rep td{border:1px solid #ccc;padding:5px 7px;text-align:left}
+.rep th{background:#003A70;color:#fff;font-size:10px}
+.rep .badge{display:inline-block;padding:3px 10px;border-radius:12px;color:#fff;font-size:10px;font-weight:700}
+.rep .kv{display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid #eee}
+.rep .lei{background:#fff8e1;border:1px solid #ffe082;border-radius:5px;padding:6px 9px;margin:4px 0;font-size:10px}
+.rep-photos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.rep-photo{border:1px solid #bbb;border-radius:4px;overflow:hidden}
+.rep-photo img{width:100%;height:150px;object-fit:cover;display:block}
+.rep-photo .c{font-size:9px;color:#444;padding:3px 5px}
+.rep-sign{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:40px}
+.rep-sign .s{border-top:1px solid #333;padding-top:5px;font-size:10px;text-align:center;color:#333}
+.rep-foot{margin-top:22px;border-top:1px solid #ccc;padding-top:8px;font-size:9px;color:#777;text-align:center}
 </style>
 </head>
 <body>
-<div id="map"></div>
 
-<div class="title-bar">
-<h1>COBERTURA DE BRIGADA — IT08 CBMPA</h1>
-<p>Terminal de Parauapebas (ETP) — Vale Metais Basicos</p>
-<div class="nums">
-  <div class="nb"><div class="nb-v">24</div><div class="nb-l">Pontos de Encontro</div></div>
-  <div class="nb"><div class="nb-v" id="nVig" style="color:#4CAF50">—</div><div class="nb-l">Brigadistas Ativos</div></div>
+<!-- ===== NAV ===== -->
+<div class="nav-bar">
+  <div style="display:flex;align-items:center">
+    <div class="nav-brand">
+      <b>COBERTURA DE BRIGADA — IT08 CBMPA</b>
+      <span>Terminal de Parauapebas (ETP) — Vale Metais Básicos</span>
+    </div>
+    <div class="top-nums">
+      <div class="nb"><div class="nb-v">24</div><div class="nb-l">Pontos</div></div>
+      <div class="nb"><div class="nb-v" id="nVig" style="color:#4CAF50">—</div><div class="nb-l">Ativos</div></div>
+      <div class="nb"><div class="nb-v" id="nVenc" style="color:#FF9800">—</div><div class="nb-l">Vencidos</div></div>
+      <div class="nb"><div class="nb-v" id="nCrit" style="color:#f44336">—</div><div class="nb-l">Críticos</div></div>
+    </div>
+  </div>
+  <div class="nav-actions">
+    <button class="nav-btn active" id="btnMapa" onclick="showView('map')">MAPA</button>
+    <button class="nav-btn" id="btnDash" onclick="showView('dash')">DASHBOARD</button>
+    <button class="nav-btn" id="btnRefresh" onclick="fetchAndMerge()" title="Reler a planilha agora">↻ ATUALIZAR</button>
+    <button class="nav-btn pdf" onclick="gerarPdfConsolidado()">PDF CONSOLIDADO</button>
+  </div>
 </div>
+
+<!-- ===== ALERTAS ===== -->
+<div class="alert-bar" id="alertBar"></div>
+
+<!-- ===== FILTROS ===== -->
+<div class="filter-bar" id="filterBar">
+  <div><label>Status</label>
+    <select id="fStatus" onchange="applyFilters()">
+      <option value="">Todos</option>
+      <option value="REGULAR">Regular</option>
+      <option value="ATENCAO">Atenção</option>
+      <option value="CRITICO">Crítico</option>
+      <option value="BASE">Base</option>
+      <option value="VINCULADO">Vinculado</option>
+    </select>
+  </div>
+  <div><label>Risco</label>
+    <select id="fRisco" onchange="applyFilters()">
+      <option value="">Todos</option>
+      <option value="BAIXO">Baixo</option>
+      <option value="MEDIO">Médio</option>
+      <option value="ALTO">Alto</option>
+    </select>
+  </div>
+  <div><label>Classe</label>
+    <select id="fClasse" onchange="applyFilters()"><option value="">Todas</option></select>
+  </div>
+  <input id="fTexto" placeholder="Buscar nome ou área..." oninput="applyFilters()"/>
+  <button class="filter-clear" onclick="clearFilters()">Limpar</button>
+  <span class="filter-count" id="filterCount"></span>
 </div>
+
+<div id="map"></div>
 
 <div class="legend">
 <h3>LEGENDA</h3>
-<div class="lg-i"><div class="lg-d" style="background:#4CAF50"></div> Brigadistas ativos suficientes</div>
-<div class="lg-i"><div class="lg-d" style="background:#FF9800"></div> Brigadistas com curso vencido</div>
-<div class="lg-i"><div class="lg-d" style="background:#f44336"></div> Sem brigadistas ativos</div>
-<div class="lg-i"><div class="lg-d" style="background:#1E88E5"></div> Base de Emergencia</div>
+<div class="lg-i"><div class="lg-d" style="background:#4CAF50"></div> Ativos suficientes</div>
+<div class="lg-i"><div class="lg-d" style="background:#FF9800"></div> Atenção / curso vencido</div>
+<div class="lg-i"><div class="lg-d" style="background:#f44336"></div> Crítico</div>
+<div class="lg-i"><div class="lg-d" style="background:#1E88E5"></div> Base de Emergência</div>
 <div class="lg-i"><div class="lg-d" style="background:#78909C"></div> Vinculado a outro PE</div>
+<div class="lg-i"><div class="lg-d" style="background:#AB47BC"></div> Sem cobertura próxima</div>
 </div>
 
-<div class="privacy-bar">
-  <span id="csvStatus">Carregando dados...</span>
-</div>
+<div class="privacy-bar"><span id="csvStatus">Carregando dados...</span></div>
 
 <button class="btn-fit" onclick="fitAll()">Ver tudo</button>
 
+<!-- ===== PAINEL DETALHE ===== -->
 <div class="panel" id="panel">
 <div class="panel-header">
   <h2 id="pTitle"></h2>
@@ -150,214 +290,119 @@ body{font-family:Arial,sans-serif;background:#111}
 <div class="panel-body">
   <div id="pStatus"></div>
   <div id="pContent"></div>
+  <button class="btn-pdf-pe" onclick="gerarPdfPE(selectedIdx)">GERAR PDF DESTE PE</button>
   <button class="close-btn" onclick="closePanel()">Fechar</button>
 </div>
 </div>
 
+<!-- ===== DASHBOARD ===== -->
+<div class="dashboard" id="dashboard">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+    <div class="dash-title">DASHBOARD DE CONFORMIDADE — BRIGADA IT-08</div>
+    <button class="nav-btn pdf" onclick="gerarPdfDashboard()">GERAR PDF DO DASHBOARD</button>
+  </div>
+  <div class="dash-sub" id="dashSync">—</div>
+  <div class="kpi-row" id="kpiRow"></div>
+  <div class="dash-grid">
+    <div class="dash-card"><h3>DISTRIBUIÇÃO POR STATUS</h3><canvas id="chartStatus"></canvas></div>
+    <div class="dash-card"><h3>EFETIVO EXIGIDO x VIGENTE (PEs com brigada)</h3><canvas id="chartEfetivo"></canvas></div>
+  </div>
+  <div class="dash-grid">
+    <div class="dash-card"><h3>RANKING DE DÉFICIT (nec − vigentes)</h3><div id="rankDeficit"></div></div>
+    <div class="dash-card"><h3>RECICLAGENS VENCIDAS POR PE</h3><div id="vencList"></div></div>
+  </div>
+</div>
+
+<!-- container oculto para render de PDF -->
+<div id="reportHolder"></div>
+
 <script>
+/* =======================================================================
+   FONTE DE DADOS
+   CSV_URL   -> planilha com Registros/Vigentes/Vencidos/Futuros por PE
+   BRIG_URL  -> (opcional) planilha nominal: PE,Nome,Funcao,Certificado,
+                DataCurso,Validade,CargaHoraria. Deixe '' para desativar.
+   ======================================================================= */
 var CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAoCvVVGSojGI5wYDn-HJTuyRdOxCw0yHA-rdOV90P7FCxw_hJ8iGiz_hgGaogeBCvvYcAJvpvPjNH/pub?gid=217989385&single=true&output=csv';
+var BRIG_URL = ''; /* preencha depois com a aba nominal publicada em CSV */
 
 var DATA = [
-{pe:"PE-01",nome:"Portaria Principal",lat:-5.999114,lon:-49.895811,
- area:"Portaria Principal",risco:"BAIXO",cls:"D-1",popFixa:4,
- nec:2,quadro:2,ativos:2,venc:0,futuros:0,status:"REGULAR",
- obs:"2 brigadistas ativos. Max. 4 pessoas/turno (regime de turnos).",
- cobre:[],cobertoPor:null,
- areas:["Portaria","Balanca rodoviaria"]},
-
-{pe:"PE-03",nome:"Refeitorio Tacaca",lat:-5.999444,lon:-49.895458,
- area:"Refeitorio Tacaca",risco:"BAIXO",cls:"F-8",popFixa:15,
- nec:5,quadro:9,ativos:9,venc:0,futuros:0,status:"REGULAR",
- obs:"9 brigadistas (Chao Goiano). Saldo preliminar +4. Classificacao F-8 (Nota 5: pop 15 > 10, +1 grupo de ate 20 = 5 min). Sem cozinha industrial, apenas distribuicao e aquecimento.",
- cobre:[],cobertoPor:null,
- areas:["Refeitorio","Distribuicao e aquecimento de refeicoes"]},
-
-{pe:"PE-04",nome:"CCGEO (Litoteca)",lat:-6.000758,lon:-49.894892,
- area:"Galpao de Testemunho",risco:"BAIXO",cls:"J-1",popFixa:30,
- nec:3,quadro:6,ativos:6,venc:0,futuros:0,status:"REGULAR",
- obs:"6 brigadistas. Saldo preliminar +3. J-1 Baixo, Nota 5: pop 30 > 10, +1 grupo ate 20 = 3 min.",
- cobre:[],cobertoPor:null,
- areas:["Galpao de testemunho","Litoteca","Laboratorio de solos"]},
-
-{pe:"PE-05",nome:"JSL (Base 01)",lat:-6.001942,lon:-49.896458,
- area:"Base Motoristas JSL",risco:"BAIXO",cls:"D-1",popFixa:30,
- nec:3,quadro:64,ativos:64,venc:0,futuros:0,status:"REGULAR",
- obs:"64 brigadistas JSL. Saldo preliminar +61. D-1 Baixo, Nota 5: pop 30 > 10, +1 grupo ate 20 = 3 min.",
- cobre:["PE-06"],cobertoPor:null,
- areas:["Base JSL","Patio de caminhoes","Moega (PE-06)"]},
-
-{pe:"PE-06",nome:"Moega",lat:-6.002350,lon:-49.896647,
- area:"Base Motoristas JSL",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
- obs:"Area relacionada ao PE-05 (JSL). Distancia: ~50m.",
- cobre:[],cobertoPor:"PE-05",
- areas:["Moega de descarga"]},
-
-{pe:"PE-07",nome:"Cobre (Sossego)",lat:-6.001522,lon:-49.896822,
- area:"Galpao do Cobre",risco:"MEDIO",cls:"I-2",popFixa:20,
- nec:7,quadro:6,ativos:1,venc:5,futuros:0,status:"CRITICO",
- obs:"CRITICO: I-2 Medio exige minimo 7 (Nota 5: base 6 + 1). Apenas 1 ativo de 6. Deficit de 6 brigadistas. Reciclagem URGENTE.",
- cobre:["PE-08"],cobertoPor:null,
- areas:["Galpao Concentrado Sossego","Galpao Salobo (PE-08)"]},
-
-{pe:"PE-08",nome:"Cobre (Salobo)",lat:-6.002394,lon:-49.897864,
- area:"Galpao do Cobre",risco:"MEDIO",cls:"I-2",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
- obs:"Area relacionada ao PE-07 (Cobre). Distancia: ~151m.",
- cobre:[],cobertoPor:"PE-07",
- areas:["Galpao Salobo"]},
-
-{pe:"PE-09",nome:"ETEI",lat:-6.002931,lon:-49.898247,
- area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
- obs:"Area relacionada ao PE-18 (Multiserv). Distancia: ~98m.",
- cobre:[],cobertoPor:"PE-18",
- areas:["ETI do Cobre"]},
-
-{pe:"PE-10",nome:"ETA",lat:-6.004069,lon:-49.898611,
- area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
- obs:"Area relacionada ao PE-18. Ponto mais ao sul.",
- cobre:[],cobertoPor:"PE-18",
- areas:["ETA Agua Potavel"]},
-
-{pe:"PE-11",nome:"Subconjunto SLB",lat:-5.998804,lon:-49.899264,
- area:"Niquel Operacao",risco:"MEDIO",cls:"I-2",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
- obs:"Area relacionada ao PE-15 (Niquel). Distancia: ~232m.",
- cobre:[],cobertoPor:"PE-15",
- areas:["Oficina Subconjunto Salobo"]},
-
-{pe:"PE-12",nome:"Heliponto",lat:-5.999042,lon:-49.900756,
- area:"Dellavolpe",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
- obs:"Area relacionada ao PE-14 (Della Volpe). Distancia: ~117m.",
- cobre:[],cobertoPor:"PE-14",
- areas:["Heliponto"]},
-
-{pe:"PE-13",nome:"ETE",lat:-5.999150,lon:-49.901772,
- area:"Dellavolpe",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
- obs:"Area relacionada ao PE-14 (DV). Ponto extremo oeste.",
- cobre:[],cobertoPor:"PE-14",
- areas:["ETE Sanitaria"]},
-
-{pe:"PE-14",nome:"Della Volpe",lat:-6.000050,lon:-49.900617,
- area:"Dellavolpe",risco:"BAIXO",cls:"D-1",popFixa:25,
- nec:3,quadro:7,ativos:0,venc:7,futuros:0,status:"CRITICO",
- obs:"CRITICO: TODOS 7 VENCIDOS. D-1 Baixo, Nota 5: pop 25 > 10, +1 grupo ate 20 = 3 min. Reciclagem URGENTE.",
- cobre:["PE-12","PE-13","PE-16"],cobertoPor:null,
- areas:["Base Della Volpe","Heliponto (PE-12)","ETE (PE-13)","Estac. Equipamentos (PE-16)"]},
-
-{pe:"PE-15",nome:"Galpao do Niquel",lat:-6.000783,lon:-49.899944,
- area:"Niquel Operacao",risco:"MEDIO",cls:"I-2",popFixa:8,
- nec:5,quadro:7,ativos:7,venc:0,futuros:0,status:"REGULAR",
- obs:"7 brigadistas. Saldo preliminar +2. I-2 Medio, pop 8: base 5 (Tabela A1 coluna <=8).",
- cobre:["PE-11"],cobertoPor:null,
- areas:["Galpao do Niquel","Subconjunto SLB (PE-11)"]},
-
-{pe:"PE-16",nome:"Estac. Equipamentos",lat:-6.002078,lon:-49.900150,
- area:"Dellavolpe",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
- obs:"Area relacionada ao PE-14 (Della Volpe).",
- cobre:[],cobertoPor:"PE-14",
- areas:["Estacionamento de equipamentos"]},
-
-{pe:"PE-17",nome:"Descarga Carvao",lat:-6.002736,lon:-49.898853,
- area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
- obs:"Area relacionada ao PE-18 (Multiserv). Distancia: ~79m.",
- cobre:[],cobertoPor:"PE-18",
- areas:["Estacao de Descarga de Carvao"]},
-
-{pe:"PE-18",nome:"Base Multiserv",lat:-6.002142,lon:-49.899406,
- area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:20,
- nec:3,quadro:6,ativos:6,venc:0,futuros:0,status:"REGULAR",
- obs:"6 brigadistas. Saldo preliminar +3. D-1 Baixo, Nota 5: pop 20 > 10, +1 grupo ate 20 = 3 min.",
- cobre:["PE-09","PE-10","PE-17","PE-19","PE-20","PE-21"],cobertoPor:null,
- areas:["Base Multiserv","ETEI (PE-09)","ETA (PE-10)","Desc. Carvao (PE-17)","Patio Carvao (PE-19)","SHAFT (PE-20)","Patio Materiais (PE-21)"]},
-
-{pe:"PE-19",nome:"Patio Carvao",lat:-6.001450,lon:-49.899497,
- area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
- obs:"Area relacionada ao PE-18 (Multiserv).",
- cobre:[],cobertoPor:"PE-18",
- areas:["Patio de Carvao"]},
-
-{pe:"PE-20",nome:"SHAFT",lat:-6.002331,lon:-49.898806,
- area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
- obs:"Area relacionada ao PE-18 (Multiserv).",
- cobre:[],cobertoPor:"PE-18",
- areas:["SHAFT"]},
-
-{pe:"PE-21",nome:"Patio de Materiais",lat:-6.001478,lon:-49.899044,
- area:"Base Multiserv",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
- obs:"Area relacionada ao PE-18 (Multiserv).",
- cobre:[],cobertoPor:"PE-18",
- areas:["Patio de Materiais"]},
-
-{pe:"PE-22",nome:"Subestacao",lat:-6.000836,lon:-49.898669,
- area:"Subestacao Manutencao",risco:"ALTO",cls:"I-3",popFixa:5,
- nec:5,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
- obs:"RISCO ALTO I-3. Minimo proprio: 5 (Tabela A1 coluna <=6). Vinculado ao PE-23 (19 brigadistas).",
- cobre:[],cobertoPor:"PE-23",
- areas:["Subestacao eletrica"]},
-
-{pe:"PE-23",nome:"Escritorio Central",lat:-6.000694,lon:-49.898503,
- area:"Escritorio Central Vale",risco:"BAIXO",cls:"D-1",popFixa:30,
- nec:3,quadro:19,ativos:19,venc:0,futuros:0,status:"REGULAR",
- obs:"19 brigadistas. Saldo preliminar +16. D-1 Baixo, Nota 5: pop 30 > 10, +1 grupo ate 20 = 3 min. Cobre PE-22 (I-3 Alto, min proprio 5).",
- cobre:["PE-22","PE-24"],cobertoPor:null,
- areas:["Escritorio Central","SESMT","Ferramentaria","Laboratorio Eletrico","Subestacao (PE-22)","Dojo (PE-24)"]},
-
-{pe:"PE-24",nome:"Dojo",lat:-6.000403,lon:-49.898219,
- area:"Escritorio Central Vale",risco:"BAIXO",cls:"D-1",popFixa:0,
- nec:0,quadro:0,ativos:0,venc:0,futuros:0,status:"VINCULADO",
- obs:"Area relacionada ao PE-23 (Escritorio). Distancia: ~45m.",
- cobre:[],cobertoPor:"PE-23",
- areas:["Patio Dojo"]},
-
-{pe:"PE-25",nome:"Base de Emergencia",lat:-6.001447,lon:-49.900342,
- area:"S.O.S.",risco:"BAIXO",cls:"D-1",popFixa:20,
- nec:3,quadro:5,ativos:5,venc:0,futuros:0,status:"BASE",
- obs:"5 brigadistas basicos + 15 Bombeiros Civis (Turnos A/B/C/D). D-1 Baixo, Nota 5: pop 20 > 10, +1 = 3 min. Base principal de emergencias.",
- cobre:[],cobertoPor:null,
- areas:["Base de Emergencia","Container Materiais","Ambulancia","Viaturas (SE-11, HILUX)"]}
+{"pe":"PE-01","nome":"Portaria Principal","lat":-5.999114,"lon":-49.895811,"area":"Portaria Principal","risco":"BAIXO","cls":"D-1","popFixa":4,"nec":2,"quadro":2,"ativos":1,"venc":1,"futuros":0,"status":"REGULAR","obs":"2 brigadistas ativos. Max. 4 pessoas/turno (regime de turnos).","cobre":[],"cobertoPor":null,"apoio":["PE-03"],"areas":["Portaria","Balanca rodoviaria"]},
+{"pe":"PE-03","nome":"Refeitorio Tacaca","lat":-5.999444,"lon":-49.895458,"area":"Refeitorio Tacaca","risco":"BAIXO","cls":"F-8","popFixa":15,"nec":5,"quadro":9,"ativos":7,"venc":2,"futuros":0,"status":"REGULAR","obs":"9 brigadistas (Chao Goiano). Saldo preliminar +4. Classificacao F-8 (Nota 5: pop 15 > 10, +1 grupo de ate 20 = 5 min). Sem cozinha industrial, apenas distribuicao e aquecimento.","cobre":[],"cobertoPor":null,"apoio":["PE-01"],"areas":["Refeitorio","Distribuicao e aquecimento de refeicoes"]},
+{"pe":"PE-04","nome":"CCGEO (Litoteca)","lat":-6.000758,"lon":-49.894892,"area":"Galpao de Testemunho","risco":"BAIXO","cls":"J-1","popFixa":30,"nec":3,"quadro":16,"ativos":16,"venc":0,"futuros":0,"status":"REGULAR","obs":"16 brigadistas. Saldo preliminar +13. J-1 Baixo, Nota 5: pop 30 > 10, +1 grupo ate 20 = 3 min.","cobre":[],"cobertoPor":null,"apoio":[],"areas":["Galpao de testemunho","Litoteca","Laboratorio de solos"]},
+{"pe":"PE-05","nome":"JSL (Base 01)","lat":-6.001942,"lon":-49.896458,"area":"Base Motoristas JSL","risco":"BAIXO","cls":"D-1","popFixa":30,"nec":3,"quadro":64,"ativos":60,"venc":4,"futuros":0,"status":"REGULAR","obs":"60 brigadistas JSL ativos. Saldo preliminar +57. D-1 Baixo, Nota 5: pop 30 > 10, +1 grupo ate 20 = 3 min.","cobre":["PE-06","PE-08"],"cobertoPor":null,"apoio":["PE-07"],"areas":["Base JSL","Patio de caminhoes","Moega (PE-06)"]},
+{"pe":"PE-06","nome":"Moega","lat":-6.00235,"lon":-49.896647,"area":"Base Motoristas JSL","risco":"BAIXO","cls":"I-2","popFixa":0,"nec":0,"quadro":0,"ativos":0,"venc":0,"futuros":0,"status":"VINCULADO","obs":"Area relacionada ao PE-05 (JSL). Distancia: ~50m.","cobre":[],"cobertoPor":"PE-05","areas":["Moega de descarga"]},
+{"pe":"PE-07","nome":"Cobre (Sossego)","lat":-6.001522,"lon":-49.896822,"area":"Galpao do Cobre","risco":"MEDIO","cls":"I-2","popFixa":20,"nec":7,"quadro":5,"ativos":1,"venc":4,"futuros":0,"status":"CRITICO","obs":"CRITICO: I-2 Medio exige minimo 7 (Nota 5: base 6 + 1). Apenas 1 ativo de 5. Deficit de 6 brigadistas. Reciclagem URGENTE.","cobre":[],"cobertoPor":null,"apoio":["PE-05"],"areas":["Galpao Concentrado Sossego","Galpao Salobo (PE-08)"]},
+{"pe":"PE-08","nome":"Cobre (Salobo)","lat":-6.002394,"lon":-49.897864,"area":"Galpao do Cobre","risco":"MEDIO","cls":"I-2","popFixa":0,"nec":0,"quadro":0,"ativos":0,"venc":0,"futuros":0,"status":"VINCULADO","obs":"Area vinculada ao PE-05 (JSL (Base 01)), hub capaz (brigada completa) mais proximo. Distancia ~163m.","cobre":[],"cobertoPor":"PE-05","areas":["Galpao Salobo"]},
+{"pe":"PE-09","nome":"ETEI","lat":-6.002931,"lon":-49.898247,"area":"Base Multiserv","risco":"BAIXO","cls":"I-1","popFixa":0,"nec":0,"quadro":0,"ativos":0,"venc":0,"futuros":0,"status":"VINCULADO","obs":"Area relacionada ao PE-18 (Multiserv). Distancia: ~98m.","cobre":[],"cobertoPor":"PE-18","areas":["ETI do Cobre"]},
+{"pe":"PE-10","nome":"ETA","lat":-6.004069,"lon":-49.898611,"area":"Base Multiserv","risco":"BAIXO","cls":"I-1","popFixa":0,"nec":0,"quadro":0,"ativos":0,"venc":0,"futuros":0,"status":"VINCULADO","obs":"Area relacionada ao PE-18. Ponto mais ao sul.","cobre":[],"cobertoPor":"PE-18","areas":["ETA Agua Potavel"]},
+{"pe":"PE-11","nome":"Subconjunto SLB","lat":-5.998804,"lon":-49.899264,"area":"Niquel Operacao","risco":"MEDIO","cls":"G-4","popFixa":0,"nec":0,"quadro":0,"ativos":0,"venc":0,"futuros":0,"status":"VINCULADO","obs":"Area vinculada ao PE-23 (Escritorio Central), hub capaz (brigada completa) mais proximo. Distancia ~226m.","cobre":[],"cobertoPor":"PE-23","areas":["Oficina Subconjunto Salobo"]},
+{"pe":"PE-12","nome":"Heliponto","lat":-5.999042,"lon":-49.900756,"area":"Dellavolpe","risco":"BAIXO","cls":"F-4","popFixa":0,"nec":0,"quadro":0,"ativos":0,"venc":0,"futuros":0,"status":"VINCULADO","obs":"Area vinculada ao PE-15 (Galpao do Niquel), hub capaz (brigada completa) mais proximo. Distancia ~213m.","cobre":[],"cobertoPor":"PE-15","areas":["Heliponto"]},
+{"pe":"PE-13","nome":"ETE","lat":-5.99915,"lon":-49.901772,"area":"Dellavolpe","risco":"BAIXO","cls":"I-1","popFixa":0,"nec":0,"quadro":0,"ativos":0,"venc":0,"futuros":0,"status":"VINCULADO","obs":"Area vinculada ao PE-15 (Galpao do Niquel), hub capaz (brigada completa) mais proximo. Distancia ~272m.","cobre":[],"cobertoPor":"PE-15","areas":["ETE Sanitaria"]},
+{"pe":"PE-14","nome":"Della Volpe","lat":-6.00005,"lon":-49.900617,"area":"Dellavolpe","risco":"BAIXO","cls":"D-1","popFixa":25,"nec":3,"quadro":7,"ativos":0,"venc":7,"futuros":0,"status":"CRITICO","obs":"CRITICO: TODOS 7 VENCIDOS. D-1 Baixo, Nota 5: pop 25 > 10, +1 grupo ate 20 = 3 min. Reciclagem URGENTE.","cobre":[],"cobertoPor":null,"apoio":[],"areas":["Base Della Volpe","Heliponto (PE-12)","ETE (PE-13)","Estac. Equipamentos (PE-16)"]},
+{"pe":"PE-15","nome":"Galpao do Niquel","lat":-6.000783,"lon":-49.899944,"area":"Niquel Operacao","risco":"MEDIO","cls":"I-2","popFixa":8,"nec":5,"quadro":13,"ativos":12,"venc":1,"futuros":0,"status":"REGULAR","obs":"12 brigadistas ativos. Saldo preliminar +7. I-2 Medio, pop 8: base 5 (Tabela A1 coluna <=8).","cobre":["PE-12","PE-13"],"cobertoPor":null,"apoio":[],"areas":["Galpao do Niquel","Subconjunto SLB (PE-11)"]},
+{"pe":"PE-16","nome":"Estac. Equipamentos","lat":-6.002078,"lon":-49.90015,"area":"Dellavolpe","risco":"BAIXO","cls":"G-1","popFixa":0,"nec":0,"quadro":0,"ativos":0,"venc":0,"futuros":0,"status":"VINCULADO","obs":"Area vinculada ao PE-25 (Base de Emergencia), hub capaz (brigada completa) mais proximo. Distancia ~73m.","cobre":[],"cobertoPor":"PE-25","areas":["Estacionamento de equipamentos"]},
+{"pe":"PE-17","nome":"Descarga Carvao","lat":-6.002736,"lon":-49.898853,"area":"Base Multiserv","risco":"BAIXO","cls":"J-3","popFixa":0,"nec":0,"quadro":0,"ativos":0,"venc":0,"futuros":0,"status":"VINCULADO","obs":"Area relacionada ao PE-18 (Multiserv). Distancia: ~79m.","cobre":[],"cobertoPor":"PE-18","areas":["Estacao de Descarga de Carvao"]},
+{"pe":"PE-18","nome":"Base Multiserv","lat":-6.002142,"lon":-49.899406,"area":"Base Multiserv","risco":"BAIXO","cls":"D-1","popFixa":20,"nec":3,"quadro":13,"ativos":8,"venc":5,"futuros":0,"status":"REGULAR","obs":"8 brigadistas ativos. Saldo preliminar +5. D-1 Baixo, Nota 5: pop 20 > 10, +1 grupo ate 20 = 3 min.","cobre":["PE-09","PE-10","PE-17","PE-19","PE-20","PE-21"],"cobertoPor":null,"apoio":[],"areas":["Base Multiserv","ETEI (PE-09)","ETA (PE-10)","Desc. Carvao (PE-17)","Patio Carvao (PE-19)","SHAFT (PE-20)","Patio Materiais (PE-21)"]},
+{"pe":"PE-19","nome":"Patio Carvao","lat":-6.00145,"lon":-49.899497,"area":"Base Multiserv","risco":"ALTO","cls":"J-4","popFixa":1,"nec":0,"quadro":0,"ativos":0,"venc":0,"futuros":0,"status":"VINCULADO","obs":"Patio ABERTO com toneladas de carvao mineral (alta carga de incendio) para fornos de ferro-niquel. Apenas 1 operador de pa carregadeira. Deposito ao ar livre J-4, risco ALTO. Coberto pelo PE-18.","cobre":[],"cobertoPor":"PE-18","areas":["Patio de Carvao"]},
+{"pe":"PE-20","nome":"SHAFT","lat":-6.002331,"lon":-49.898806,"area":"Base Multiserv","risco":"BAIXO","cls":"I-2","popFixa":0,"nec":0,"quadro":0,"ativos":0,"venc":0,"futuros":0,"status":"VINCULADO","obs":"Area relacionada ao PE-18 (Multiserv).","cobre":[],"cobertoPor":"PE-18","areas":["SHAFT"]},
+{"pe":"PE-21","nome":"Patio de Materiais","lat":-6.001478,"lon":-49.899044,"area":"Base Multiserv","risco":"BAIXO","cls":"J-1","popFixa":0,"nec":0,"quadro":0,"ativos":0,"venc":0,"futuros":0,"status":"VINCULADO","obs":"Area relacionada ao PE-18 (Multiserv).","cobre":[],"cobertoPor":"PE-18","areas":["Patio de Materiais"]},
+{"pe":"PE-22","nome":"Subestacao","lat":-6.000836,"lon":-49.898669,"area":"Subestacao Manutencao","risco":"ALTO","cls":"M-3","popFixa":5,"nec":5,"quadro":5,"ativos":3,"venc":2,"futuros":0,"status":"ATENCAO","obs":"RISCO ALTO. Subestacao eletrica (M-3). Brigada propria: minimo 5. 3 ativos / 2 vencidos. Ponto INDEPENDENTE (separado do PE-23) para controle proprio de reciclagem.","cobre":[],"cobertoPor":null,"apoio":["PE-23"],"areas":["Subestacao eletrica"]},
+{"pe":"PE-23","nome":"Escritorio Central","lat":-6.000694,"lon":-49.898503,"area":"Escritorio Central Vale","risco":"BAIXO","cls":"D-1","popFixa":30,"nec":3,"quadro":16,"ativos":12,"venc":4,"futuros":0,"status":"REGULAR","obs":"12 brigadistas ativos. Saldo preliminar +9. D-1 Baixo, Nota 5: pop 30 > 10, +1 grupo ate 20 = 3 min.","cobre":["PE-11","PE-24"],"cobertoPor":null,"apoio":["PE-22"],"areas":["Escritorio Central","SESMT","Ferramentaria","Laboratorio Eletrico","Subestacao (PE-22)","Dojo (PE-24)"]},
+{"pe":"PE-24","nome":"Dojo","lat":-6.000403,"lon":-49.898219,"area":"Escritorio Central Vale","risco":"BAIXO","cls":"E-4","popFixa":0,"nec":0,"quadro":0,"ativos":0,"venc":0,"futuros":0,"status":"VINCULADO","obs":"Sala de treinamento com maquinas (risco de pequeno porte) e produtos das classes A e C. Centro de treinamento profissional E-4, risco baixo. Vinculado ao PE-23.","cobre":[],"cobertoPor":"PE-23","areas":["Patio Dojo"]},
+{"pe":"PE-25","nome":"Base de Emergencia","lat":-6.001447,"lon":-49.900342,"area":"S.O.S.","risco":"BAIXO","cls":"D-1","popFixa":8,"nec":3,"quadro":5,"ativos":5,"venc":0,"futuros":0,"status":"BASE","obs":"Base principal de emergencia (S.O.S.): Bombeiros Civis 5 (diurno) + 2 (noturno). Ambulancia e viaturas. No maximo ~8 pessoas presentes. Retaguarda de todo o terminal.","cobre":["PE-16"],"cobertoPor":null,"apoio":[],"areas":["Base de Emergencia","Container Materiais","Ambulancia","Viaturas (SE-11, HILUX)"]}
 ];
 
 var PEINDEX = {};
 DATA.forEach(function(d,i){ PEINDEX[d.pe] = i; });
 
-/* ============ FUNCOES AUXILIARES ============ */
+/* fotos anexadas em memoria de sessao: { 'PE-07': [{url,legenda,data}] } */
+var PHOTOS = {};
+/* brigadistas nominais em memoria: { 'PE-07': [{nome,funcao,cert,dataCurso,validade,ch}] } */
+var BRIG = {};
+var LAST_SYNC = null;
 
+/* ============ FUNCOES AUXILIARES ============ */
 function cor(s){
   if(s==='REGULAR') return '#4CAF50';
   if(s==='CRITICO') return '#f44336';
   if(s==='ATENCAO') return '#FF9800';
   if(s==='BASE') return '#1E88E5';
+  if(s==='DESCOBERTO') return '#AB47BC';
   return '#78909C';
 }
-
 function riscoCor(r){
   if(r==='ALTO') return '#f44336';
   if(r==='MEDIO') return '#FF9800';
   return '#4CAF50';
 }
-
+/* satelite = ponto sem brigada propria (nec 0), exceto a base */
+function isSatellite(d){ return d.nec===0 && d.pe!=='PE-25'; }
+/* hub capaz = so pode cobrir quem cumpre o proprio minimo (ativos>=nec); base sempre */
+function isHubCapable(d){ return d.pe==='PE-25' || (d.nec>0 && d.ativos>=d.nec); }
 function recalcStatus(d){
-  if(d.cobertoPor) return 'VINCULADO';
   if(d.pe==='PE-25') return 'BASE';
-  if(d.nec===0) return 'VINCULADO';
-  if(d.ativos >= d.nec){
-    return d.venc > 0 ? 'ATENCAO' : 'REGULAR';
-  }
-  if(d.ativos > 0) return 'ATENCAO';
+  if(isSatellite(d)) return d.descoberto ? 'DESCOBERTO' : 'VINCULADO';
+  /* ponto com brigada propria: abaixo do minimo IT-08 = CRITICO (vermelho) */
+  if(d.ativos >= d.nec) return d.venc > 0 ? 'ATENCAO' : 'REGULAR';
   return 'CRITICO';
 }
-
+/* COBERTURA DINAMICA: cada satelite vai ao hub CAPAZ mais proximo,
+   desde que dentro do raio realista; fora disso fica SEM COBERTURA. */
+var COVER_MAX_M = 150;
+function assignCoverage(){
+  var hubs=DATA.filter(isHubCapable);
+  DATA.forEach(function(d){ if(!isSatellite(d)) d.cobre=[]; });
+  DATA.filter(isSatellite).forEach(function(d){
+    var best=null,bd=Infinity;
+    hubs.forEach(function(h){ var dd=map.distance([d.lat,d.lon],[h.lat,h.lon]); if(dd<bd){bd=dd;best=h;} });
+    if(best && bd<=COVER_MAX_M){ d.cobertoPor=best.pe; d.descoberto=false; best.cobre.push(d.pe); }
+    else { d.cobertoPor=null; d.descoberto=true; }
+  });
+}
+function refreshStatuses(){ assignCoverage(); DATA.forEach(function(d){ d.status=recalcStatus(d); }); }
 function statusLabel(d){
+  if(d.status==='DESCOBERTO') return 'SEM COBERTURA PROXIMA';
   if(d.status==='VINCULADO') return 'VINCULADO AO ' + d.cobertoPor;
   if(d.status==='REGULAR') return 'ATEND. PRELIMINAR';
   if(d.status==='ATENCAO') return 'ATENCAO';
@@ -365,25 +410,46 @@ function statusLabel(d){
   if(d.status==='BASE') return 'BASE EMERGENCIA';
   return d.status;
 }
-
 function computeTotals(){
-  var r=0,v=0,ve=0,f=0;
+  var r=0,v=0,ve=0,f=0,crit=0,reqPE=0,confPE=0;
   DATA.forEach(function(d){
-    r += d.quadro||0;
-    v += d.ativos||0;
-    ve += d.venc||0;
-    f += d.futuros||0;
+    r += d.quadro||0; v += d.ativos||0; ve += d.venc||0; f += d.futuros||0;
+    if(d.status==='CRITICO') crit++;
+    if(d.nec>0 && !d.cobertoPor){ reqPE++; if(d.ativos>=d.nec) confPE++; }
   });
-  return {reg:r,vig:v,ven:ve,fut:f};
+  var pct = reqPE>0 ? Math.round(confPE/reqPE*100) : 0;
+  return {reg:r,vig:v,ven:ve,fut:f,crit:crit,reqPE:reqPE,confPE:confPE,pct:pct};
 }
-
 function updateTitleBar(){
   var t = computeTotals();
   document.getElementById('nVig').textContent = t.vig;
+  document.getElementById('nVenc').textContent = t.ven;
+  document.getElementById('nCrit').textContent = t.crit;
+  updateAlertBar(t);
+}
+function updateAlertBar(t){
+  var bar=document.getElementById('alertBar');
+  var criticos=DATA.filter(function(d){return d.status==='CRITICO';}).map(function(d){return d.pe;});
+  if(criticos.length>0){
+    bar.className='alert-bar';
+    bar.innerHTML='⚠ <b>'+criticos.length+' PE(s) CRÍTICO(S):</b> '+criticos.join(', ')+'  •  <b>'+t.ven+'</b> reciclagens vencidas no total';
+    bar.style.display='block';
+    document.getElementById('filterBar').classList.add('pushed');
+    document.body.classList.add('has-alert');
+  } else if(t.ven>0){
+    bar.className='alert-bar warn';
+    bar.innerHTML='<b>'+t.ven+'</b> reciclagens vencidas — verifique o dashboard';
+    bar.style.display='block';
+    document.getElementById('filterBar').classList.add('pushed');
+    document.body.classList.add('has-alert');
+  } else {
+    bar.style.display='none';
+    document.getElementById('filterBar').classList.remove('pushed');
+    document.body.classList.remove('has-alert');
+  }
 }
 
 /* ============ CSV PARSER ============ */
-
 function parseCSV(text){
   var rows=[], row=[], cell='', inQ=false;
   for(var i=0; i<text.length; i++){
@@ -406,44 +472,19 @@ function parseCSV(text){
   return rows;
 }
 
-/* ============ CSV FETCH E MERGE ============ */
-
-function extractSummary(rows){
-  for(var i=0;i<Math.min(5,rows.length);i++){
-    var line = rows[i].join(',');
-    if(line.indexOf('Registros:')>-1){
-      var nums={};
-      rows[i].forEach(function(c){
-        var m=c.match(/^(\w+):\s*(\d+)$/);
-        if(m) nums[m[1]]=parseInt(m[2]);
-      });
-      return nums;
-    }
-  }
-  return null;
-}
-
+/* ============ CSV FETCH E MERGE (efetivo por PE) ============ */
 function fetchAndMerge(){
+  var st=document.getElementById('csvStatus'); if(st) st.textContent='Atualizando dados da planilha...';
   fetch(CSV_URL)
-    .then(function(resp){
-      if(!resp.ok) throw new Error('HTTP '+resp.status);
-      return resp.text();
-    })
+    .then(function(resp){ if(!resp.ok) throw new Error('HTTP '+resp.status); return resp.text(); })
     .then(function(text){
       var rows = parseCSV(text);
-
-      var summary = extractSummary(rows);
-
       var headerIdx = -1;
-      for(var i=0;i<rows.length;i++){
-        if(rows[i][0]==='PE'){headerIdx=i;break;}
-      }
+      for(var i=0;i<rows.length;i++){ if(rows[i][0]==='PE'){headerIdx=i;break;} }
       if(headerIdx<0) throw new Error('Header PE nao encontrado');
-
       var headers = rows[headerIdx];
       var colMap = {};
       headers.forEach(function(h,idx){colMap[h.trim()]=idx;});
-
       var csvData = {};
       for(var j=headerIdx+1;j<rows.length;j++){
         var r = rows[j];
@@ -455,54 +496,100 @@ function fetchAndMerge(){
           futuros:   parseInt(r[colMap['Futuros']]||'0')||0
         };
       }
-
       DATA.forEach(function(d){
         if(csvData[d.pe]){
-          d.quadro  = csvData[d.pe].registros;
-          d.ativos  = csvData[d.pe].vigentes;
-          d.venc    = csvData[d.pe].vencidos;
-          d.futuros = csvData[d.pe].futuros;
-          d.status  = recalcStatus(d);
+          d.quadro=csvData[d.pe].registros; d.ativos=csvData[d.pe].vigentes;
+          d.venc=csvData[d.pe].vencidos; d.futuros=csvData[d.pe].futuros;
         }
       });
-
-      /* Sempre computa totais dos dados reais por PE */
-      updateTitleBar();
-      updateMarkers();
-      document.getElementById('csvStatus').textContent =
-        'Dados sincronizados via planilha';
+      refreshStatuses();
+      LAST_SYNC = new Date();
+      updateTitleBar(); updateMarkers(); applyFilters();
+      document.getElementById('csvStatus').textContent='Dados sincronizados via planilha — '+LAST_SYNC.toLocaleString('pt-BR');
     })
     .catch(function(e){
       console.warn('CSV fallback:',e);
-      document.getElementById('csvStatus').textContent =
-        'Modo offline — dados locais';
-      updateTitleBar();
+      refreshStatuses();
+      LAST_SYNC = new Date();
+      document.getElementById('csvStatus').textContent='Modo offline — dados locais';
+      updateTitleBar(); updateMarkers(); applyFilters();
     });
+  fetchBrigadistas();
+}
+
+/* ============ CSV NOMINAL (opcional) ============ */
+function fetchBrigadistas(){
+  if(!BRIG_URL){ return; }
+  fetch(BRIG_URL)
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+    .then(function(text){
+      var rows=parseCSV(text);
+      var hi=-1;
+      for(var i=0;i<rows.length;i++){ if(rows[i].indexOf('PE')>-1 && rows[i].indexOf('Nome')>-1){hi=i;break;} }
+      if(hi<0) return;
+      var h=rows[hi], cm={}; h.forEach(function(x,ix){cm[x.trim()]=ix;});
+      BRIG={};
+      for(var j=hi+1;j<rows.length;j++){
+        var r=rows[j]; var pe=r[cm['PE']]; if(!pe||pe.indexOf('PE-')!==0) continue;
+        if(!BRIG[pe]) BRIG[pe]=[];
+        BRIG[pe].push({
+          nome:r[cm['Nome']]||'', funcao:r[cm['Funcao']]||r[cm['Função']]||'',
+          cert:r[cm['Certificado']]||'', dataCurso:r[cm['DataCurso']]||r[cm['Data do curso']]||'',
+          validade:r[cm['Validade']]||'', ch:r[cm['CargaHoraria']]||r[cm['Carga horaria']]||''
+        });
+      }
+    })
+    .catch(function(e){ console.warn('Nominal indisponivel:',e); });
+}
+function diasParaVencer(dstr){
+  if(!dstr) return null;
+  var p=dstr.split(/[\/\-]/); var dt;
+  if(p.length===3){
+    if(p[0].length===4) dt=new Date(p[0],p[1]-1,p[2]);
+    else dt=new Date(p[2],p[1]-1,p[0]);
+  } else return null;
+  if(isNaN(dt)) return null;
+  return Math.round((dt-new Date())/86400000);
 }
 
 /* ============ MAPA ============ */
-
 var map = L.map('map',{zoomControl:false}).setView([-6.001,-49.898],17);
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}).addTo(map);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,maxNativeZoom:18}).addTo(map);
 L.control.zoom({position:'bottomright'}).addTo(map);
 
 var markers = [];
 var covLines = [];
 var selectedIdx = -1;
 
+/* DECLUTTER: separa visualmente pins que ficam praticamente sobrepostos
+   (< ~30m). Guarda uma posicao de EXIBICAO em DISP; as coordenadas reais
+   (d.lat/d.lon) continuam sendo usadas para calcular distancias. */
+var DISP={};
+(function(){
+  var placed=[];
+  var MIN=0.00028; /* ~31m: so mexe em pins quase sobrepostos */
+  DATA.forEach(function(d){
+    var la=d.lat, lo=d.lon, k=0;
+    while(k<16 && placed.some(function(p){return Math.abs(p[0]-la)<MIN && Math.abs(p[1]-lo)<MIN;})){
+      k++;
+      var ang=k*2.399, r=0.00030*(1+k*0.2); /* espiral suave */
+      la=d.lat+Math.sin(ang)*r; lo=d.lon+Math.cos(ang)*r;
+    }
+    placed.push([la,lo]);
+    DISP[d.pe]=[la,lo];
+  });
+})();
+
 DATA.forEach(function(d,i){
   var c = cor(d.status);
   var icon = L.divIcon({
-    className:'pe-marker',
-    iconSize:[80,50],
-    iconAnchor:[40,50],
+    className:'pe-marker', iconSize:[80,50], iconAnchor:[40,50],
     html:'<div class="pin-wrap" id="pin-'+i+'">'+
       '<div class="pin-head" style="background:'+c+'">'+d.pe+'</div>'+
       '<div class="pin-arrow" style="border-top:8px solid '+c+'"></div>'+
-      '<div class="pin-label">'+d.nome+'</div>'+
-    '</div>'
+      '<div class="pin-label">'+d.nome+'</div></div>'
   });
-  var m = L.marker([d.lat,d.lon],{icon:icon}).addTo(map).on('click',function(){showInfo(i);});
+  var m = L.marker(DISP[d.pe],{icon:icon}).addTo(map).on('click',function(){showInfo(i);});
   markers.push(m);
 });
 
@@ -517,16 +604,100 @@ function updateMarkers(){
   });
 }
 
-/* ============ PAINEL ============ */
+/* ============ FILTROS ============ */
+function initClassOptions(){
+  var sel=document.getElementById('fClasse');
+  var seen={};
+  DATA.forEach(function(d){ if(!seen[d.cls]){seen[d.cls]=1;} });
+  Object.keys(seen).sort().forEach(function(c){
+    var o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o);
+  });
+}
+/* remove acentos e normaliza para busca */
+function norm(s){
+  return (s||'').toString().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function applyFilters(){
+  var fs=document.getElementById('fStatus').value;
+  var fr=document.getElementById('fRisco').value;
+  var fc=document.getElementById('fClasse').value;
+  var ftRaw=(document.getElementById('fTexto').value||'').trim();
+  var ft=norm(ftRaw);
+  /* Detecta busca por CODIGO do PE: numero puro ("7","07") ou "PE-07".
+     Nesse caso, casa SO com o codigo do PE (exato), evitando falsos
+     positivos como "01" batendo em "JSL (Base 01)". */
+  var codePart=ftRaw.replace(/^pe[\s-]?/i,'').trim();
+  var isCodeQuery = /^\d+$/.test(codePart);
+  var codeNum = isCodeQuery ? parseInt(codePart,10) : null;
+  var vis=0, lastMatch=-1;
+  DATA.forEach(function(d,i){
+    var ok=true;
+    if(fs && d.status!==fs) ok=false;
+    if(fr && d.risco!==fr) ok=false;
+    if(fc && d.cls!==fc) ok=false;
+    if(ft){
+      var match;
+      if(isCodeQuery){
+        /* compara o numero do PE de forma exata */
+        var peNum=parseInt(d.pe.replace(/\D/g,''),10);
+        match = (peNum===codeNum);
+      } else {
+        /* busca textual em nome, area, sub-areas, classe e brigadistas */
+        var brigNomes=(BRIG[d.pe]||[]).map(function(b){return b.nome;}).join(' ');
+        var hay=norm(d.pe+' '+d.nome+' '+d.area+' '+d.areas.join(' ')+' '+d.cls+' '+brigNomes);
+        match = hay.indexOf(ft)>=0;
+      }
+      if(!match) ok=false;
+    }
+    var pin=document.getElementById('pin-'+i);
+    if(pin){ pin.classList.toggle('pin-dim',!ok); if(!ok) pin.style.filter=''; }
+    if(ok){ vis++; lastMatch=i; }
+  });
+  var anyFilter = fs||fr||fc||ft;
+  var fcEl=document.getElementById('filterCount');
+  if(anyFilter && vis===0){
+    fcEl.textContent='Nenhum PE encontrado'+(isCodeQuery?' (não existe PE-'+(codePart.length<2?'0'+codePart:codePart)+')':'');
+    fcEl.style.color='#f44336';
+  } else {
+    fcEl.textContent = anyFilter ? (vis+' de '+DATA.length+' PEs') : '';
+    fcEl.style.color='#bbb';
+  }
+  /* se a busca isolou 1 unico PE, centraliza o mapa nele */
+  if(ft && vis===1 && lastMatch>=0){
+    map.setView([DATA[lastMatch].lat,DATA[lastMatch].lon], 17, {animate:true});
+  }
+}
+function clearFilters(){
+  document.getElementById('fStatus').value='';
+  document.getElementById('fRisco').value='';
+  document.getElementById('fClasse').value='';
+  document.getElementById('fTexto').value='';
+  applyFilters();
+}
 
+/* ============ PAINEL DETALHE ============ */
 function clearCoverage(){
   covLines.forEach(function(l){map.removeLayer(l);});
   covLines=[];
-  if(selectedIdx>=0){
-    var pin=document.getElementById('pin-'+selectedIdx);
-    if(pin) pin.style.filter='';
-  }
+  if(selectedIdx>=0){ var pin=document.getElementById('pin-'+selectedIdx); if(pin) pin.style.filter=''; }
 }
+
+var CLS_DESC={
+  'D-1':'Prestacao de servico profissional ou conducao de negocios',
+  'D-2':'Agencia bancaria','D-3':'Servico de reparacao','D-4':'Laboratorio',
+  'F-8':'Local para refeicao','G-4':'Servicos de conservacao, manutencao e reparos',
+  'I-1':'Industrial — risco baixo','I-2':'Industrial — risco medio','I-3':'Industrial — risco alto',
+  'J-1':'Deposito de material incombustivel','J-2':'Deposito de materiais comuns',
+  'J-3':'Deposito de material com media/alta carga de incendio',
+  'J-4':'Deposito de alto risco / alta carga de incendio',
+  'F-4':'Estacao e terminal de passageiros (heliponto)',
+  'G-1':'Garagem/estacionamento sem acesso de publico',
+  'G-5':'Hangar (abrigo de aeronave)',
+  'E-4':'Centro de treinamento profissional',
+  'E-6':'Cultura fisica / treinamento',
+  'M-3':'Central de comunicacao e energia'
+};
 
 function showInfo(i){
   clearCoverage();
@@ -534,24 +705,22 @@ function showInfo(i){
   var d=DATA[i];
   var panel=document.getElementById('panel');
   panel.style.display='block';
-
   document.getElementById('pTitle').textContent = d.pe+' — '+d.nome;
   document.getElementById('pSub').textContent = d.area+' | '+d.cls+' | Risco '+d.risco;
 
-  var sColor = cor(d.status);
-  var sLabel = statusLabel(d);
+  var sColor=cor(d.status), sLabel=statusLabel(d);
   document.getElementById('pStatus').innerHTML =
     '<div class="panel-status" style="background:'+sColor+';color:#fff">'+sLabel+'</div>'+
     '<span class="panel-status" style="background:'+riscoCor(d.risco)+';color:#fff;margin-left:6px">'+d.risco+'</span>';
 
   var html='';
-
   /* EFETIVO */
   html+='<div class="panel-section"><h3>EFETIVO IT08</h3>';
   if(d.pe==='PE-25'){
-    html+='<div class="pr"><span class="k">Brigadistas basicos</span><span class="v" style="color:#4CAF50">'+d.ativos+'</span></div>';
-    html+='<div class="pr"><span class="k">Bombeiros Civis (4 turnos)</span><span class="v" style="color:#1E88E5">15</span></div>';
-    html+='<div class="pr"><span class="k">Quantitativo vigente identificado</span><span class="v" style="color:#FFD600">'+(d.ativos+15)+'</span></div>';
+    html+='<div class="pr"><span class="k">Bombeiros Civis (diurno)</span><span class="v" style="color:#1E88E5">5</span></div>';
+    html+='<div class="pr"><span class="k">Bombeiros Civis (noturno)</span><span class="v" style="color:#1E88E5">2</span></div>';
+    html+='<div class="pr"><span class="k">Efetivo total (BC)</span><span class="v" style="color:#FFD600">7</span></div>';
+    html+='<div class="pr"><span class="k">Máx. pessoas presentes</span><span class="v">8</span></div>';
   } else if(d.nec>0){
     html+='<div class="pr"><span class="k">Necessarios (IT08)</span><span class="v">'+d.nec+'</span></div>';
     html+='<div class="pr"><span class="k">No quadro</span><span class="v">'+d.quadro+'</span></div>';
@@ -566,125 +735,336 @@ function showInfo(i){
   if(d.popFixa>0) html+='<div class="pr"><span class="k">Pop. fixa estimada</span><span class="v">'+d.popFixa+'</span></div>';
   html+='</div>';
 
-  /* AREAS — somente PEs com populacao */
-  if(d.popFixa>0){
-    html+='<div class="panel-section"><h3>AREAS RELACIONADAS AO PE</h3>';
-    d.areas.forEach(function(a){
-      html+='<div class="cov-area">'+a+'</div>';
+  /* BRIGADISTAS NOMINAIS (se planilha configurada) */
+  if(BRIG[d.pe] && BRIG[d.pe].length){
+    html+='<div class="panel-section"><h3>BRIGADISTAS</h3><table class="brig-table"><tr><th>Nome</th><th>Função</th><th>Validade</th></tr>';
+    BRIG[d.pe].forEach(function(b){
+      var dv=diasParaVencer(b.validade), cls='';
+      if(dv!==null && dv<0) cls='brig-venc'; else if(dv!==null && dv<=30) cls='brig-avencer';
+      html+='<tr><td>'+b.nome+'</td><td>'+b.funcao+'</td><td class="'+cls+'">'+(b.validade||'-')+'</td></tr>';
     });
-    html+='</div>';
+    html+='</table></div>';
   }
 
-  /* PEs que este cobre — somente PEs com populacao */
+  /* AREAS */
+  if(d.popFixa>0){
+    html+='<div class="panel-section"><h3>AREAS RELACIONADAS AO PE</h3>';
+    d.areas.forEach(function(a){ html+='<div class="cov-area">'+a+'</div>'; });
+    html+='</div>';
+  }
+  /* COBERTURA */
   if(d.popFixa>0 && d.cobre.length>0){
     html+='<div class="panel-section"><h3>PEs SOB COBERTURA</h3><div>';
-    d.cobre.forEach(function(pe){
-      var ci=PEINDEX[pe];
-      var cd=DATA[ci];
-      html+='<span class="cov-tag">'+pe+' '+cd.nome+'</span>';
-    });
+    d.cobre.forEach(function(pe){ var cd=DATA[PEINDEX[pe]]; html+='<span class="cov-tag">'+pe+' '+cd.nome+'</span>'; });
     html+='</div></div>';
-
     d.cobre.forEach(function(pe){
-      var ci=PEINDEX[pe];
-      var cd=DATA[ci];
-      var line=L.polyline(
-        [[d.lat,d.lon],[cd.lat,cd.lon]],
-        {color:'#FFD600',weight:2.5,dashArray:'6,4',opacity:0.8}
-      ).addTo(map);
+      var cd=DATA[PEINDEX[pe]];
+      var line=L.polyline([DISP[d.pe]||[d.lat,d.lon],DISP[cd.pe]||[cd.lat,cd.lon]],{color:'#FFD600',weight:2.5,dashArray:'6,4',opacity:0.8}).addTo(map);
       var dist=Math.round(map.distance([d.lat,d.lon],[cd.lat,cd.lon]));
-      line.bindTooltip(dist+'m',{permanent:true,direction:'center',
-        className:'pin-label',offset:[0,-8]});
+      line.bindTooltip(dist+'m',{permanent:true,direction:'center',className:'pin-label',offset:[0,-8]});
+      covLines.push(line);
+    });
+  }
+  /* VINCULO */
+  if(d.popFixa>0 && d.cobertoPor){
+    var cd=DATA[PEINDEX[d.cobertoPor]];
+    html+='<div class="panel-section"><h3>VINCULADO A</h3><span class="cov-tag" style="font-size:12px;padding:4px 12px">'+d.cobertoPor+' — '+cd.nome+' ('+cd.ativos+' vigentes)</span></div>';
+    var line=L.polyline([DISP[d.pe]||[d.lat,d.lon],DISP[cd.pe]||[cd.lat,cd.lon]],{color:'#FFD600',weight:2.5,dashArray:'6,4',opacity:0.8}).addTo(map);
+    var dist=Math.round(map.distance([d.lat,d.lon],[cd.lat,cd.lon]));
+    line.bindTooltip(dist+'m',{permanent:true,direction:'center',className:'pin-label',offset:[0,-8]});
+    covLines.push(line);
+  }
+
+  /* APOIO MUTUO (PEs com brigada propria que se apoiam) */
+  var apoio=d.apoio||[];
+  if(d.popFixa>0 && apoio.length>0){
+    html+='<div class="panel-section"><h3>APOIO MÚTUO (IT-08)</h3><div>';
+    apoio.forEach(function(pe){ var cd=DATA[PEINDEX[pe]]; html+='<span class="cov-tag">'+pe+' '+cd.nome+'</span>'; });
+    html+='</div></div>';
+    apoio.forEach(function(pe){
+      var cd=DATA[PEINDEX[pe]];
+      var line=L.polyline([DISP[d.pe]||[d.lat,d.lon],DISP[cd.pe]||[cd.lat,cd.lon]],{color:'#FFD600',weight:2.5,dashArray:'6,4',opacity:0.8}).addTo(map);
+      var dist=Math.round(map.distance([d.lat,d.lon],[cd.lat,cd.lon]));
+      line.bindTooltip(dist+'m',{permanent:true,direction:'center',className:'pin-label',offset:[0,-8]});
       covLines.push(line);
     });
   }
 
-  /* Vinculado a — somente PEs com populacao */
-  if(d.popFixa>0 && d.cobertoPor){
-    var ci=PEINDEX[d.cobertoPor];
-    var cd=DATA[ci];
-    html+='<div class="panel-section"><h3>VINCULADO A</h3>';
-    html+='<span class="cov-tag" style="font-size:12px;padding:4px 12px">'+d.cobertoPor+' — '+cd.nome+' ('+cd.ativos+' vigentes)</span>';
-    html+='</div>';
-
-    var line=L.polyline(
-      [[d.lat,d.lon],[cd.lat,cd.lon]],
-      {color:'#FFD600',weight:2.5,dashArray:'6,4',opacity:0.8}
-    ).addTo(map);
-    var dist=Math.round(map.distance([d.lat,d.lon],[cd.lat,cd.lon]));
-    line.bindTooltip(dist+'m',{permanent:true,direction:'center',
-      className:'pin-label',offset:[0,-8]});
-    covLines.push(line);
-  }
+  /* REGISTRO FOTOGRAFICO */
+  html+='<div class="panel-section"><h3>REGISTRO FOTOGRÁFICO</h3>';
+  html+='<div class="photo-upload"><input type="file" accept="image/*" multiple onchange="addPhotos(\''+d.pe+'\',this)"></div>';
+  html+='<div class="photo-grid" id="photoGrid">'+renderPhotoGrid(d.pe)+'</div></div>';
 
   /* RESPALDO LEGAL */
   html+='<div class="panel-section"><h3>RESPALDO LEGAL</h3>';
-
-  var clsDesc={
-    'D-1':'Prestacao de servico profissional ou conducao de negocios',
-    'D-2':'Agencia bancaria',
-    'D-3':'Servico de reparacao',
-    'D-4':'Laboratorio',
-    'F-8':'Local para refeicao',
-    'G-4':'Servicos de conservacao, manutencao e reparos',
-    'I-1':'Industrial — risco baixo',
-    'I-2':'Industrial — risco medio',
-    'I-3':'Industrial — risco alto',
-    'J-1':'Deposito de material incombustivel',
-    'J-2':'Deposito de materiais comuns',
-    'M-3':'Central de comunicacao e energia'
-  };
-
-  html+='<div class="lei-box"><b>IT-08 CBMPA</b> — Classificacao <b style="color:#FFD600">'+d.cls+'</b> — '+(clsDesc[d.cls]||d.cls)+'<br>';
-  if(d.nec>0) html+='Min. <b>'+d.nec+'</b> brigadistas — ';
-  else html+='Vinculado a PE adjacente — ';
+  html+='<div class="lei-box"><b>IT-08 CBMPA</b> — Classificacao <b style="color:#FFD600">'+d.cls+'</b> — '+(CLS_DESC[d.cls]||d.cls)+'<br>';
+  if(d.nec>0) html+='Min. <b>'+d.nec+'</b> brigadistas — '; else html+='Vinculado a PE adjacente — ';
   html+='<b>NBR 14276</b> reciclagem anual';
   if(d.venc>0) html+=' — <b style="color:#FF9800">'+d.venc+' vencido(s)</b>';
   html+='</div>';
-
   html+='<div class="lei-box"><b>NR-23</b> — Saidas de emergencia, sinalizacao e combate a incendio</div>';
-
-  if(d.cls==='I-3')
-    html+='<div class="lei-box"><b>NR-10</b> — Seguranca em instalacoes e servicos em eletricidade</div>';
-
-  if(d.pe==='PE-25')
-    html+='<div class="lei-box"><b>Lei 11.901</b> + <b>NBR 14608</b> — 15 BM Civis (4 turnos)</div>';
-
-  if(d.popFixa>0 && d.cobre.length>0)
-    html+='<div class="lei-box"><b>IT-08</b> — Cobertura conjunta — '+d.cobre.length+' PE(s) adjacente(s)</div>';
-
-  if(d.popFixa>0 && d.cobertoPor)
-    html+='<div class="lei-box"><b>IT-08</b> — Vinculado ao '+d.cobertoPor+'</div>';
-
+  if(d.cls==='I-3') html+='<div class="lei-box"><b>NR-10</b> — Seguranca em instalacoes e servicos em eletricidade</div>';
+  if(d.pe==='PE-25') html+='<div class="lei-box"><b>Lei 11.901</b> + <b>NBR 14608</b> — 7 Bombeiros Civis (5 diurno / 2 noturno)</div>';
+  if(d.popFixa>0 && d.cobre.length>0) html+='<div class="lei-box"><b>IT-08</b> — Cobertura conjunta — '+d.cobre.length+' PE(s) adjacente(s)</div>';
+  if(d.popFixa>0 && d.cobertoPor) html+='<div class="lei-box"><b>IT-08</b> — Vinculado ao '+d.cobertoPor+'</div>';
   html+='</div>';
 
   document.getElementById('pContent').innerHTML=html;
-
   var pin=document.getElementById('pin-'+i);
   if(pin) pin.style.filter='drop-shadow(0 0 8px #FFD600)';
 }
+function closePanel(){ document.getElementById('panel').style.display='none'; clearCoverage(); selectedIdx=-1; }
+function fitAll(){ map.fitBounds(L.latLngBounds(DATA.map(function(d){return[d.lat,d.lon];})).pad(0.12)); }
 
-function closePanel(){
-  document.getElementById('panel').style.display='none';
-  clearCoverage();
-  selectedIdx=-1;
+/* ============ FOTOS ============ */
+function addPhotos(pe,input){
+  if(!PHOTOS[pe]) PHOTOS[pe]=[];
+  var files=input.files; var pend=files.length;
+  Array.prototype.forEach.call(files,function(f){
+    var rd=new FileReader();
+    rd.onload=function(e){
+      PHOTOS[pe].push({url:e.target.result,legenda:f.name.replace(/\.[^.]+$/,''),data:new Date().toLocaleString('pt-BR')});
+      pend--; if(pend<=0 && selectedIdx>=0 && DATA[selectedIdx].pe===pe){ document.getElementById('photoGrid').innerHTML=renderPhotoGrid(pe); }
+    };
+    rd.readAsDataURL(f);
+  });
+  input.value='';
+}
+function renderPhotoGrid(pe){
+  var arr=PHOTOS[pe]||[]; if(!arr.length) return '<div style="font-size:10px;color:#888;grid-column:1/3">Nenhuma foto anexada.</div>';
+  return arr.map(function(p,ix){
+    return '<div class="photo-card"><button class="rm" onclick="rmPhoto(\''+pe+'\','+ix+')">×</button>'+
+      '<img src="'+p.url+'"><div class="cap">'+p.data+'</div>'+
+      '<input class="photo-legend-in" value="'+(p.legenda||'').replace(/"/g,'&quot;')+'" onchange="setLegenda(\''+pe+'\','+ix+',this.value)" placeholder="Legenda..."></div>';
+  }).join('');
+}
+function rmPhoto(pe,ix){ PHOTOS[pe].splice(ix,1); document.getElementById('photoGrid').innerHTML=renderPhotoGrid(pe); }
+function setLegenda(pe,ix,v){ if(PHOTOS[pe]&&PHOTOS[pe][ix]) PHOTOS[pe][ix].legenda=v; }
+
+/* ============ VIEWS (mapa / dashboard) ============ */
+function showView(v){
+  var isDash=(v==='dash');
+  document.getElementById('dashboard').style.display=isDash?'block':'none';
+  document.getElementById('btnDash').classList.toggle('active',isDash);
+  document.getElementById('btnMapa').classList.toggle('active',!isDash);
+  document.getElementById('filterBar').style.display=isDash?'none':'flex';
+  document.querySelector('.legend').style.display=isDash?'none':'block';
+  document.querySelector('.btn-fit').style.display=isDash?'none':'block';
+  if(isDash) renderDashboard();
 }
 
-function fitAll(){
-  map.fitBounds(L.latLngBounds(DATA.map(function(d){return[d.lat,d.lon];})).pad(0.12));
+var chStatus=null, chEfetivo=null;
+function renderDashboard(){
+  var t=computeTotals();
+  document.getElementById('dashSync').textContent = 'Última sincronização: '+(LAST_SYNC?LAST_SYNC.toLocaleString('pt-BR'):'—');
+  /* KPIs */
+  var pctColor = t.pct>=80?'#4CAF50':(t.pct>=50?'#FF9800':'#f44336');
+  document.getElementById('kpiRow').innerHTML=
+    kpi(DATA.length,'Pontos de Encontro','#FFD600')+
+    kpi(t.vig,'Brigadistas Ativos','#4CAF50')+
+    kpi(t.ven,'Reciclagens Vencidas','#FF9800')+
+    kpi(t.crit,'PEs Críticos','#f44336')+
+    kpi(t.pct+'%','Conformidade Geral',pctColor);
+  if(window.ChartDataLabels && !Chart.__dl){ Chart.register(ChartDataLabels); Chart.__dl=true; }
+  /* grafico status */
+  var counts={REGULAR:0,ATENCAO:0,CRITICO:0,BASE:0,VINCULADO:0,DESCOBERTO:0};
+  DATA.forEach(function(d){ counts[d.status]=(counts[d.status]||0)+1; });
+  if(chStatus) chStatus.destroy();
+  chStatus=new Chart(document.getElementById('chartStatus'),{
+    type:'doughnut',
+    data:{labels:['Regular','Atenção','Crítico','Base','Vinculado','Sem cobertura'],
+      datasets:[{data:[counts.REGULAR,counts.ATENCAO,counts.CRITICO,counts.BASE,counts.VINCULADO,counts.DESCOBERTO],
+        backgroundColor:['#4CAF50','#FF9800','#f44336','#1E88E5','#78909C','#AB47BC'],borderWidth:0}]},
+    options:{plugins:{legend:{labels:{color:'#ddd',font:{size:11}}},
+      datalabels:{color:'#fff',font:{weight:'bold',size:14},formatter:function(v){return v>0?v:'';}}}}
+  });
+  /* grafico efetivo (PEs que exigem brigada) */
+  var reqs=DATA.filter(function(d){return d.nec>0 && !d.cobertoPor;});
+  if(chEfetivo) chEfetivo.destroy();
+  chEfetivo=new Chart(document.getElementById('chartEfetivo'),{
+    type:'bar',
+    data:{labels:reqs.map(function(d){return d.pe;}),
+      datasets:[
+        {label:'Necessário',data:reqs.map(function(d){return d.nec;}),backgroundColor:'#FFD600'},
+        {label:'Vigente',data:reqs.map(function(d){return d.ativos;}),backgroundColor:'#4CAF50'}
+      ]},
+    options:{scales:{x:{ticks:{color:'#bbb',font:{size:9}}},y:{ticks:{color:'#bbb'},beginAtZero:true}},
+      plugins:{legend:{labels:{color:'#ddd',font:{size:11}}},
+        datalabels:{color:'#fff',anchor:'end',align:'end',font:{weight:'bold',size:9},formatter:function(v){return v;}}}}
+  });
+  /* ranking deficit */
+  var def=DATA.filter(function(d){return d.nec>0 && !d.cobertoPor;})
+    .map(function(d){return {pe:d.pe,nome:d.nome,def:d.nec-d.ativos};})
+    .sort(function(a,b){return b.def-a.def;});
+  document.getElementById('rankDeficit').innerHTML = def.map(function(r){
+    var c=r.def>0?'#f44336':'#4CAF50';
+    return '<div class="rank-row"><span class="pe">'+r.pe+' '+r.nome+'</span><span class="def" style="color:'+c+'">'+(r.def>0?'-'+r.def:'OK')+'</span></div>';
+  }).join('');
+  /* vencimentos */
+  var venc=DATA.filter(function(d){return d.venc>0;}).sort(function(a,b){return b.venc-a.venc;});
+  document.getElementById('vencList').innerHTML = venc.length? venc.map(function(d){
+    return '<div class="venc-row"><span>'+d.pe+' '+d.nome+'</span><span style="color:#FF9800;font-weight:700">'+d.venc+' vencido(s)</span></div>';
+  }).join('') : '<div style="color:#4CAF50;font-size:12px">Nenhuma reciclagem vencida.</div>';
+}
+function kpi(v,l,c){ return '<div class="kpi"><div class="v" style="color:'+c+'">'+v+'</div><div class="l">'+l+'</div></div>'; }
+
+/* ============ GERACAO DE PDF ============ */
+function nowStr(){ return new Date().toLocaleString('pt-BR'); }
+function repBadge(d){ return '<span class="badge" style="background:'+cor(d.status)+'">'+statusLabel(d)+'</span> <span class="badge" style="background:'+riscoCor(d.risco)+'">'+d.risco+'</span>'; }
+
+function buildReportPE(d){
+  var saldo=d.ativos-d.nec;
+  var naoConf=[];
+  if(d.nec>0 && d.ativos<d.nec) naoConf.push('Efetivo vigente ('+d.ativos+') inferior ao mínimo exigido pela IT-08 ('+d.nec+'). Déficit de '+(d.nec-d.ativos)+' brigadista(s).');
+  if(d.venc>0) naoConf.push(d.venc+' certificado(s) de brigadista vencido(s) — reciclagem anual (NBR 14276) pendente.');
+  if(!naoConf.length) naoConf.push('Nenhuma não conformidade identificada nesta verificação preliminar.');
+
+  var fotos=(PHOTOS[d.pe]||[]);
+  var brig=(BRIG[d.pe]||[]);
+  var num='RC-'+d.pe.replace('PE-','')+'-'+new Date().getFullYear();
+
+  var h='<div class="rep">';
+  h+='<div class="rep-head"><div><h1>RELATÓRIO DE CONFORMIDADE DA BRIGADA DE INCÊNDIO</h1>'+
+     '<div style="font-size:11px;color:#003A70;margin-top:2px"><b>'+d.pe+' — '+d.nome+'</b></div></div>'+
+     '<div class="meta">Nº '+num+'<br>'+nowStr()+'<br>IT-08 CBMPA</div></div>';
+
+  h+='<h2>1. Identificação</h2><table>'+
+     '<tr><th>Ponto de Encontro</th><td>'+d.pe+' — '+d.nome+'</td><th>Área</th><td>'+d.area+'</td></tr>'+
+     '<tr><th>Classificação IT-08</th><td>'+d.cls+' — '+(CLS_DESC[d.cls]||'')+'</td><th>Grau de risco</th><td>'+d.risco+'</td></tr>'+
+     '<tr><th>População fixa</th><td>'+d.popFixa+'</td><th>Situação</th><td>'+statusLabel(d)+'</td></tr>'+
+     '</table>';
+
+  h+='<h2>2. Efetivo da Brigada (dimensionamento IT-08 / Tabela A1 + Nota 5)</h2><table>'+
+     '<tr><th>Necessário</th><th>No quadro</th><th>Vigentes</th><th>Vencidos</th><th>Futuros</th><th>Saldo</th></tr>'+
+     '<tr><td>'+d.nec+'</td><td>'+d.quadro+'</td><td>'+d.ativos+'</td><td>'+d.venc+'</td><td>'+d.futuros+'</td><td>'+(saldo>=0?'+':'')+saldo+'</td></tr></table>'+
+     '<div style="margin-top:6px">'+repBadge(d)+'</div>';
+
+  if(brig.length){
+    h+='<h2>3. Relação Nominal de Brigadistas</h2><table><tr><th>Nome</th><th>Função</th><th>Certificado</th><th>Validade</th><th>C.H.</th></tr>';
+    brig.forEach(function(b){
+      var dv=diasParaVencer(b.validade), st=(dv!==null&&dv<0)?' style="color:#c62828;font-weight:bold"':'';
+      h+='<tr><td>'+b.nome+'</td><td>'+b.funcao+'</td><td>'+b.cert+'</td><td'+st+'>'+(b.validade||'-')+'</td><td>'+(b.ch||'-')+'</td></tr>';
+    });
+    h+='</table>';
+  }
+
+  h+='<h2>'+(brig.length?'4':'3')+'. Áreas Cobertas e Vínculos</h2>';
+  h+='<div style="font-size:11px">Áreas: '+d.areas.join('; ')+'.</div>';
+  if(d.cobre.length) h+='<div style="font-size:11px;margin-top:4px">Este PE cobre: '+d.cobre.join(', ')+'.</div>';
+  if(d.cobertoPor) h+='<div style="font-size:11px;margin-top:4px">Vinculado ao '+d.cobertoPor+' — '+DATA[PEINDEX[d.cobertoPor]].nome+'.</div>';
+  if((d.apoio||[]).length) h+='<div style="font-size:11px;margin-top:4px">Apoio mútuo com: '+d.apoio.join(', ')+'.</div>';
+
+  h+='<h2>'+(brig.length?'5':'4')+'. Não Conformidades e Recomendações</h2><table><tr><th>Descrição</th></tr>';
+  naoConf.forEach(function(n){ h+='<tr><td>'+n+'</td></tr>'; });
+  h+='</table>';
+
+  h+='<h2>'+(brig.length?'6':'5')+'. Registro Fotográfico</h2>';
+  if(fotos.length){
+    h+='<div class="rep-photos">';
+    fotos.forEach(function(p){ h+='<div class="rep-photo"><img src="'+p.url+'"><div class="c">'+(p.legenda||'')+' — '+p.data+'</div></div>'; });
+    h+='</div>';
+  } else { h+='<div style="font-size:11px;color:#777">Sem registro fotográfico anexado.</div>'; }
+
+  h+='<h2>'+(brig.length?'7':'6')+'. Respaldo Legal</h2>';
+  h+='<div class="lei"><b>IT-08 CBMPA</b> — Brigada de Incêndio (Parte I). Classe '+d.cls+'. Mínimo '+(d.nec||'—')+' brigadistas.</div>';
+  h+='<div class="lei"><b>NBR 14276</b> — Programa de brigada / reciclagem anual. <b>NR-23</b> — Proteção contra incêndios.</div>';
+  if(d.cls==='I-3') h+='<div class="lei"><b>NR-10</b> — Segurança em instalações e serviços em eletricidade.</div>';
+  if(d.pe==='PE-25') h+='<div class="lei"><b>Lei 11.901</b> + <b>NBR 14608</b> — 7 Bombeiros Civis (5 diurno / 2 noturno).</div>';
+
+  h+='<div class="rep-foot">Documento gerado em '+nowStr()+' • Terminal ETP Parauapebas • Conforme IT-08 CBMPA — '+num+'</div>';
+  h+='</div>';
+  return h;
+}
+
+function elementToPDF(html,filename){
+  var holder=document.getElementById('reportHolder');
+  holder.innerHTML=html;
+  var target=holder.firstChild;
+  return html2canvas(target,{scale:2,backgroundColor:'#ffffff',useCORS:true}).then(function(canvas){
+    var pdf=new jspdf.jsPDF('p','mm','a4');
+    var pageW=210,pageH=297;
+    var imgW=pageW, imgH=canvas.height*imgW/canvas.width;
+    var position=0, remaining=imgH;
+    var imgData=canvas.toDataURL('image/jpeg',0.92);
+    if(imgH<=pageH){
+      pdf.addImage(imgData,'JPEG',0,0,imgW,imgH);
+    } else {
+      while(remaining>0){
+        pdf.addImage(imgData,'JPEG',0,position,imgW,imgH);
+        remaining-=pageH;
+        if(remaining>0){ pdf.addPage(); position-=pageH; }
+      }
+    }
+    pdf.save(filename);
+    holder.innerHTML='';
+  });
+}
+
+function gerarPdfPE(i){
+  if(i<0){ alert('Selecione um PE no mapa primeiro.'); return; }
+  var d=DATA[i];
+  elementToPDF(buildReportPE(d),'Relatorio_'+d.pe+'.pdf');
+}
+
+function buildReportConsolidado(){
+  var t=computeTotals();
+  var h='<div class="rep">';
+  h+='<div class="rep-head"><div><h1>RELATÓRIO CONSOLIDADO DA BRIGADA DE INCÊNDIO</h1>'+
+     '<div style="font-size:11px;color:#003A70;margin-top:2px"><b>Terminal ETP Parauapebas — Vale</b></div></div>'+
+     '<div class="meta">'+nowStr()+'<br>IT-08 CBMPA</div></div>';
+  h+='<h2>Indicadores Gerais</h2><table>'+
+     '<tr><th>Pontos de Encontro</th><td>'+DATA.length+'</td><th>Brigadistas ativos</th><td>'+t.vig+'</td></tr>'+
+     '<tr><th>Reciclagens vencidas</th><td>'+t.ven+'</td><th>PEs críticos</th><td>'+t.crit+'</td></tr>'+
+     '<tr><th>Conformidade geral</th><td colspan="3">'+t.pct+'% ('+t.confPE+' de '+t.reqPE+' PEs que exigem brigada)</td></tr></table>';
+  h+='<h2>Quadro Geral por PE</h2><table><tr><th>PE</th><th>Nome</th><th>Classe</th><th>Risco</th><th>Nec.</th><th>Vig.</th><th>Venc.</th><th>Status</th></tr>';
+  DATA.forEach(function(d){
+    h+='<tr><td>'+d.pe+'</td><td>'+d.nome+'</td><td>'+d.cls+'</td><td>'+d.risco+'</td><td>'+(d.nec||'-')+'</td><td>'+d.ativos+'</td><td>'+d.venc+'</td><td>'+statusLabel(d)+'</td></tr>';
+  });
+  h+='</table>';
+  var crit=DATA.filter(function(d){return d.status==='CRITICO';});
+  h+='<h2>Pontos Críticos</h2>';
+  if(crit.length){ h+='<table><tr><th>PE</th><th>Déficit</th><th>Observação</th></tr>';
+    crit.forEach(function(d){ h+='<tr><td>'+d.pe+' '+d.nome+'</td><td>'+(d.nec-d.ativos)+'</td><td>'+d.obs+'</td></tr>'; });
+    h+='</table>';
+  } else h+='<div style="font-size:11px;color:#2e7d32">Nenhum PE em estado crítico.</div>';
+  h+='<div class="rep-foot">Documento gerado em '+nowStr()+' • Conforme IT-08 CBMPA</div>';
+  h+='</div>';
+  return h;
+}
+function gerarPdfConsolidado(){ elementToPDF(buildReportConsolidado(),'Relatorio_Consolidado_Brigada.pdf'); }
+
+/* PDF do DASHBOARD (captura KPIs + graficos com rotulos de dados) */
+function gerarPdfDashboard(){
+  var el=document.getElementById('dashboard');
+  var btn=el.querySelector('.nav-btn.pdf');
+  if(btn) btn.style.visibility='hidden'; /* nao sai no PDF */
+  html2canvas(el,{scale:2,backgroundColor:'#0c1622',useCORS:true,
+    windowWidth:el.scrollWidth,windowHeight:el.scrollHeight}).then(function(canvas){
+    if(btn) btn.style.visibility='visible';
+    var pdf=new jspdf.jsPDF('l','mm','a4'); /* paisagem */
+    var pageW=297,pageH=210;
+    var imgW=pageW, imgH=canvas.height*imgW/canvas.width;
+    var img=canvas.toDataURL('image/jpeg',0.92);
+    if(imgH<=pageH){ pdf.addImage(img,'JPEG',0,0,imgW,imgH); }
+    else { var position=0,remaining=imgH;
+      while(remaining>0){ pdf.addImage(img,'JPEG',0,position,imgW,imgH); remaining-=pageH; if(remaining>0){pdf.addPage();position-=pageH;} } }
+    pdf.save('Dashboard_Brigada_IT08.pdf');
+  }).catch(function(e){ if(btn) btn.style.visibility='visible'; console.warn('PDF dashboard:',e); alert('Falha ao gerar PDF do dashboard: '+e.message); });
 }
 
 /* ============ INIT ============ */
-
+initClassOptions();
+refreshStatuses();
 fitAll();
 updateTitleBar();
+updateMarkers();
 fetchAndMerge();
+applyFilters();
+/* atualizacao automatica: rele a planilha a cada 5 minutos (para telao/mural) */
+setInterval(fetchAndMerge, 300000);
 
 map.on('click',function(e){
-  if(e.originalEvent.target===map.getContainer()||
-     e.originalEvent.target.classList.contains('leaflet-tile')){
-    closePanel();
-  }
+  if(e.originalEvent.target===map.getContainer()||e.originalEvent.target.classList.contains('leaflet-tile')){ closePanel(); }
 });
 </script>
 </body>
