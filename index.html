@@ -229,6 +229,7 @@ body.has-alert .dashboard{top:82px}
   <div class="nav-actions">
     <button class="nav-btn active" id="btnMapa" onclick="showView('map')">MAPA</button>
     <button class="nav-btn" id="btnDash" onclick="showView('dash')">DASHBOARD</button>
+    <button class="nav-btn" id="btnVenc" onclick="abrirVencidos()">VENCIDOS</button>
     <button class="nav-btn" id="btnRefresh" onclick="fetchAndMerge()" title="Reler a planilha agora">↻ ATUALIZAR</button>
     <button class="nav-btn pdf" onclick="gerarPdfConsolidado()">PDF CONSOLIDADO</button>
   </div>
@@ -1066,6 +1067,106 @@ setInterval(fetchAndMerge, 300000);
 map.on('click',function(e){
   if(e.originalEvent.target===map.getContainer()||e.originalEvent.target.classList.contains('leaflet-tile')){ closePanel(); }
 });
+</script>
+
+<!-- ===== JANELA: RELATÓRIO DE VENCIDOS ===== -->
+<style>
+#vencModal{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,20,40,.85);overflow:auto;padding:16px;color-scheme:light}
+#vencModal .vmbox{background:#fff;color:#111;max-width:920px;margin:0 auto;border-radius:10px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#vencModal .vmbar{background:#003A70;color:#fff;padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#vencModal .vmbar b{color:#FFD600;font-size:13px;margin-right:auto}
+#vencModal .vmbar button{background:#FFD600;color:#003A70;border:none;border-radius:6px;padding:7px 12px;font-weight:700;cursor:pointer;font-size:12px}
+#vencModal .vmbar button.s{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,214,0,.4)}
+#vencModal .vmbody{padding:22px 26px}
+#vencModal textarea{width:100%;height:80px;font-family:monospace;font-size:11px;margin-top:8px;box-sizing:border-box}
+.vrep h2{color:#003A70;font-size:16px;margin:0 0 2px}
+.vrep .sub{font-size:10px;color:#666;margin-bottom:10px;border-bottom:3px solid #C9A400;padding-bottom:8px}
+.vrep h3{color:#003A70;font-size:12px;border-bottom:1px solid #ccc;padding-bottom:3px;margin:14px 0 6px}
+.vrep table{width:100%;border-collapse:collapse;font-size:10.5px;margin:4px 0}
+.vrep th,.vrep td{border:1px solid #ccc;padding:4px 6px;text-align:left}
+.vrep th{background:#003A70;color:#fff;font-size:10px}
+.vrep tr:nth-child(even) td{background:#F0F2F5}
+.vrep .emp{background:#003A70;color:#fff;font-weight:700;font-size:12px;padding:6px 8px;margin-top:12px}
+.vrep th.sub2{background:#5B7FA6}
+.vrep .dias{color:#C0392B;font-weight:700;text-align:center}
+.vrep .ctr{text-align:center}
+.vrep .tot td{background:#C9A400!important;font-weight:700}
+.vrep .note{font-size:9px;color:#777;margin-top:10px}
+@media print{
+  body.printing-venc > *:not(#vencModal){display:none!important}
+  #vencModal{position:static;background:#fff;padding:0;display:block!important;overflow:visible}
+  #vencModal .vmbar{display:none}
+  #vencModal .vmbox{box-shadow:none;max-width:none;border-radius:0}
+}
+</style>
+<div id="vencModal">
+  <div class="vmbox">
+    <div class="vmbar">
+      <b>RELATÓRIO DE TREINAMENTOS VENCIDOS</b>
+      <button onclick="carregarVencidos()">Atualizar</button>
+      <button class="s" onclick="imprimirVencidos()">Salvar PDF</button>
+      <button class="s" onclick="fecharVencidos()">Fechar</button>
+    </div>
+    <div class="vmbody">
+      <div id="vencCfg"></div>
+      <div id="vencOut" class="vrep"></div>
+    </div>
+  </div>
+</div>
+<script>
+/* ===== RELATORIO DE VENCIDOS (le a aba nominal em CSV; usa parseCSV/BRIG_URL globais) ===== */
+function abrirVencidos(){document.getElementById('vencModal').style.display='block';carregarVencidos();}
+function fecharVencidos(){document.getElementById('vencModal').style.display='none';}
+function imprimirVencidos(){document.body.classList.add('printing-venc');window.print();setTimeout(function(){document.body.classList.remove('printing-venc');},600);}
+function _vd(s){s=(s||'').trim();var m=s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);if(!m)return null;var a=+m[1],b=+m[2],y=+m[3];if(y<100)y+=2000;var mo=a,d=b;if(a>12){d=a;mo=b;}var dt=new Date(y,mo-1,d);return isNaN(dt)?null:dt;}
+function _mcpf(c){c=(c||'').trim();return c.length>=7?c.slice(0,3)+'.***.***-'+c.slice(-2):c;}
+function _vidx(H,names){var i;for(var a=0;a<names.length;a++){i=H.findIndex(function(h){return h.trim().toUpperCase()===names[a];});if(i>=0)return i;}for(var b=0;b<names.length;b++){i=H.findIndex(function(h){return h.trim().toUpperCase().indexOf(names[b])>=0;});if(i>=0)return i;}return -1;}
+function _pasteUI(msg){
+  var cfg=document.getElementById('vencCfg');
+  cfg.innerHTML='<p style="font-size:12px;color:#333">'+msg+'</p>'+
+    '<textarea id="vencPaste" placeholder="Cole aqui o conteudo CSV da aba de brigadistas..."></textarea>'+
+    '<button id="vencGerar" style="background:#003A70;color:#fff;border:none;border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:700;margin-top:6px">Gerar do texto</button>';
+  document.getElementById('vencGerar').addEventListener('click',function(){renderVencidos(document.getElementById('vencPaste').value);});
+  document.getElementById('vencOut').innerHTML='';
+}
+function renderVencidos(text){
+  document.getElementById('vencCfg').innerHTML='';
+  var out=document.getElementById('vencOut');
+  var rows=parseCSV(text);
+  var hi=rows.findIndex(function(r){var j=r.map(function(x){return (x||'').toUpperCase();}).join('|');return j.indexOf('NOME')>=0&&j.indexOf('EMPRESA')>=0;});
+  if(hi<0){out.innerHTML='<p style="color:#b00">Não encontrei o cabeçalho (NOME/EMPRESA) no CSV.</p>';return;}
+  var H=rows[hi];
+  var iN=_vidx(H,['NOME']),iE=_vidx(H,['EMPRESA']),iC=_vidx(H,['CPF']),iT=_vidx(H,['TURNO']),iHo=_vidx(H,['HORARIO','HORÁRIO']),iL=_vidx(H,['LOCAL DE TRABALHO','LOCAL']),iV=_vidx(H,['DATA DO VENCIMENTO','VENCIMENTO']);
+  var hoje=new Date();hoje.setHours(0,0,0,0);var venc=[],tot=0;
+  for(var k=hi+1;k<rows.length;k++){var r=rows[k];if(!r[iN]||!r[iN].trim())continue;tot++;var dv=_vd(r[iV]);if(!dv||dv>=hoje)continue;
+    venc.push({nome:r[iN].trim(),empresa:(r[iE]||'').trim().toUpperCase(),cpf:_mcpf(r[iC]),turno:(r[iT]||'').trim(),hor:(r[iHo]||'').trim(),local:(r[iL]||'').trim(),dtv:(r[iV]||'').trim(),dias:Math.round((hoje-dv)/86400000)});}
+  if(!venc.length){out.innerHTML='<p>Nenhum treinamento vencido ('+tot+' registros lidos).</p>';return;}
+  var by={};venc.forEach(function(v){(by[v.empresa]=by[v.empresa]||[]).push(v);});
+  var emps=Object.keys(by).sort(function(a,b){return by[b].length-by[a].length;});
+  var hj=hoje.toLocaleDateString('pt-BR');
+  var h='<h2>COLABORADORES COM TREINAMENTO DE BRIGADA VENCIDO</h2><div class="sub">Terminal de Parauapebas (ETP) | Reciclagem NBR 14276 / IT-08 CBMPA | Emitido em '+hj+'</div>';
+  h+='<p style="font-size:12px">Total de <b>'+venc.length+'</b> colaboradores com reciclagem <b>vencida</b>, em <b>'+emps.length+'</b> empresas (base: '+tot+' cadastrados).</p>';
+  h+='<h3>1. Resumo por Empresa</h3><table><tr><th>Empresa</th><th class="ctr">Vencidos</th><th class="ctr">%</th></tr>';
+  emps.forEach(function(e){h+='<tr><td>'+e+'</td><td class="ctr" style="color:#C0392B;font-weight:700">'+by[e].length+'</td><td class="ctr">'+Math.round(100*by[e].length/venc.length)+'%</td></tr>';});
+  h+='<tr class="tot"><td>TOTAL</td><td class="ctr">'+venc.length+'</td><td class="ctr">100%</td></tr></table>';
+  h+='<h3>2. Detalhamento Nominal por Empresa</h3>';
+  emps.forEach(function(e){var lst=by[e].sort(function(a,b){return b.dias-a.dias;});
+    h+='<div class="emp">'+e+' — '+lst.length+' vencido(s)</div><table><tr><th class="sub2">#</th><th class="sub2">Nome</th><th class="sub2">CPF</th><th class="sub2">Turno</th><th class="sub2">Local</th><th class="sub2 ctr">Venc. em</th><th class="sub2 ctr">Dias</th></tr>';
+    lst.forEach(function(v,i){h+='<tr><td class="ctr">'+(i+1)+'</td><td>'+v.nome+'</td><td>'+v.cpf+'</td><td class="ctr">'+((v.turno+'/'+v.hor).replace(/^\/|\/$/g,''))+'</td><td>'+v.local+'</td><td class="ctr">'+v.dtv+'</td><td class="dias">'+v.dias+'</td></tr>';});
+    h+='</table>';});
+  h+='<div class="note">CPF mascarado por privacidade. "Dias" = dias corridos desde o vencimento. Cálculo: DATA DO VENCIMENTO &lt; '+hj+'.</div>';
+  out.innerHTML=h;
+}
+function carregarVencidos(){
+  var out=document.getElementById('vencOut');
+  if(typeof BRIG_URL!=='undefined' && BRIG_URL){
+    document.getElementById('vencCfg').innerHTML='';out.innerHTML='<p>Carregando lista de brigadistas...</p>';
+    fetch(BRIG_URL).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(renderVencidos)
+      .catch(function(e){_pasteUI('Não foi possível ler pela URL ('+e.message+'). Cole o CSV da aba de brigadistas abaixo:');});
+  } else {
+    _pasteUI('A URL da aba de brigadistas ainda não foi configurada (variável <code>BRIG_URL</code>, perto do topo do arquivo). Cole o CSV abaixo para gerar agora, ou publique a aba em CSV e preencha a URL para ficar automático.');
+  }
+}
 </script>
 </body>
 </html>
