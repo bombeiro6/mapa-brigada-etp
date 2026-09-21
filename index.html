@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestão de Brigada IT08 — ETP Parauapebas (v2)</title>
+<title>Gestão de Brigada IT08 — ETP Parauapebas (v3)</title>
+<!-- v3 — 21/09/2026: vigente/vencido/a vencer passam a ser CALCULADOS na
+     abertura, a partir da DATA DO VENCIMENTO da aba nominal x a data de hoje.
+     A aba RESUMO_MAPA virou apenas fallback. A coluna PRAZO da planilha nao e
+     mais lida (ela guarda um numero congelado e nao acompanha o calendario). -->
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -327,6 +332,32 @@ body.has-alert .dashboard{top:82px}
 var CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAoCvVVGSojGI5wYDn-HJTuyRdOxCw0yHA-rdOV90P7FCxw_hJ8iGiz_hgGaogeBCvvYcAJvpvPjNH/pub?gid=217989385&single=true&output=csv';
 var BRIG_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAoCvVVGSojGI5wYDn-HJTuyRdOxCw0yHA-rdOV90P7FCxw_hJ8iGiz_hgGaogeBCvvYcAJvpvPjNH/pub?gid=1804374482&single=true&output=csv'; /* aba PUBLICA sem CPF (Pagina2) */
 
+/* =======================================================================
+   REGRA DE VENCIMENTO  (calculada SEMPRE na abertura, nunca lida pronta)
+   - VENCIDO   : validade < hoje
+   - A VENCER  : validade entre hoje e hoje + AVENCER_DIAS
+   - VIGENTE   : validade > hoje + AVENCER_DIAS
+   Nao usar a coluna PRAZO da planilha: ela guarda um numero congelado.
+   ======================================================================= */
+var AVENCER_DIAS = 30;
+
+/* LOCAL DE TRABALHO (como vem na planilha) -> PE. Chave sem acento/caixa.
+   Local fora desta lista entra em NAO MAPEADO e aparece no dashboard. */
+var LOCAL_PE = {
+  'PORTARIA PRINCIPAL':'PE-01',
+  'REFEITORIO TACACA':'PE-03', 'REFEITORIO':'PE-03',
+  'GALPAO DE TESTEMUNHO':'PE-04', 'CCGEO':'PE-04', 'CEGEO':'PE-04', 'LITOTECA':'PE-04',
+  'BASE MOTORISTAS JSL':'PE-05', 'BASE JSL':'PE-05',
+  'GALPAO DO COBRE':'PE-07', 'PREDIO DO COBRE':'PE-07', 'ADMINISTRATIVO COBRE':'PE-07',
+  'DELLAVOLPE':'PE-14', 'DELLA VOLPE':'PE-14',
+  'NIQUEL OPERACAO':'PE-15', 'GALPAO DO NIQUEL':'PE-15',
+  'AREA 2':'PE-18', 'BASE MULTSERV':'PE-18', 'BASE MULTISERV':'PE-18', 'MULTSERV':'PE-18',
+  'SUBESTACAO MANUTENCAO':'PE-22', 'SUBESTACAO':'PE-22',
+  'ESCRITORIO CENTRAL VALE':'PE-23', 'ESCRITORIO CENTRAL':'PE-23',
+  'SEGURANCA DO TRABALHO VALE':'PE-23', 'SESMT':'PE-23',
+  'BASE DE EMERGENCIA':'PE-25', 'S.O.S.':'PE-25', 'SOS':'PE-25'
+};
+
 var DATA = [
 {"pe":"PE-01","nome":"Portaria Principal","lat":-5.999114,"lon":-49.895811,"area":"Portaria Principal","risco":"BAIXO","cls":"D-1","popFixa":4,"nec":2,"quadro":2,"ativos":1,"venc":1,"futuros":0,"status":"REGULAR","obs":"2 brigadistas ativos. Max. 4 pessoas/turno (regime de turnos).","cobre":[],"cobertoPor":null,"apoio":["PE-03"],"areas":["Portaria","Balanca rodoviaria"]},
 {"pe":"PE-03","nome":"Refeitorio Tacaca","lat":-5.999444,"lon":-49.895458,"area":"Refeitorio Tacaca","risco":"BAIXO","cls":"F-8","popFixa":15,"nec":5,"quadro":9,"ativos":7,"venc":2,"futuros":0,"status":"REGULAR","obs":"9 brigadistas (Chao Goiano). Saldo preliminar +4. Classificacao F-8 (Nota 5: pop 15 > 10, +1 grupo de ate 20 = 5 min). Sem cozinha industrial, apenas distribuicao e aquecimento.","cobre":[],"cobertoPor":null,"apoio":["PE-01"],"areas":["Refeitorio","Distribuicao e aquecimento de refeicoes"]},
@@ -497,60 +528,186 @@ function fetchAndMerge(){
           futuros:   parseInt(r[colMap['Futuros']]||'0')||0
         };
       }
-      DATA.forEach(function(d){
-        if(csvData[d.pe]){
-          d.quadro=csvData[d.pe].registros; d.ativos=csvData[d.pe].vigentes;
-          d.venc=csvData[d.pe].vencidos; d.futuros=csvData[d.pe].futuros;
-        }
-      });
+      /* A nominal manda. O RESUMO_MAPA so entra se a nominal nao carregou. */
+      if(!BRIG_OK){
+        DATA.forEach(function(d){
+          if(csvData[d.pe]){
+            d.quadro=csvData[d.pe].registros; d.ativos=csvData[d.pe].vigentes;
+            d.venc=csvData[d.pe].vencidos; d.futuros=csvData[d.pe].futuros;
+          }
+        });
+      }
       refreshStatuses();
       LAST_SYNC = new Date();
-      updateTitleBar(); updateMarkers(); applyFilters();
-      document.getElementById('csvStatus').textContent='Dados sincronizados via planilha — '+LAST_SYNC.toLocaleString('pt-BR');
+      updateTitleBar(); updateMarkers(); applyFilters(); setStatusLine();
     })
     .catch(function(e){
       console.warn('CSV fallback:',e);
       refreshStatuses();
       LAST_SYNC = new Date();
-      document.getElementById('csvStatus').textContent='Modo offline — dados locais';
-      updateTitleBar(); updateMarkers(); applyFilters();
+      updateTitleBar(); updateMarkers(); applyFilters(); setStatusLine();
     });
   fetchBrigadistas();
 }
 
-/* ============ CSV NOMINAL (opcional) ============ */
+/* ============ DATAS: parser robusto + dias corridos ============ */
+/* Formato da coluna de validade: detectado 1x por carga.
+   'DMA' = dia/mes/ano | 'MDA' = mes/dia/ano | 'ISO' = aaaa-mm-dd     */
+var DATE_FMT = 'DMA';
+function detectDateFmt(vals){
+  var iso=0, dma=0, mda=0;
+  vals.forEach(function(s){
+    if(!s) return;
+    var p=String(s).trim().split(/[\/\-\.]/);
+    if(p.length!==3) return;
+    if(p[0].length===4){ iso++; return; }
+    var a=parseInt(p[0],10), b=parseInt(p[1],10);
+    if(a>12 && b<=12) dma++;
+    else if(b>12 && a<=12) mda++;
+  });
+  if(iso>dma && iso>mda) return 'ISO';
+  return mda>dma ? 'MDA' : 'DMA';   /* empate/ambiguo -> padrao BR */
+}
+function hojeZero(){ var h=new Date(); h.setHours(0,0,0,0); return h; }
+function parseData(s){
+  if(!s) return null;
+  var p=String(s).trim().split(/[\/\-\.]/);
+  if(p.length!==3) return null;
+  var y,m,d;
+  if(p[0].length===4 || DATE_FMT==='ISO'){ y=+p[0]; m=+p[1]; d=+p[2]; }
+  else if(DATE_FMT==='MDA'){ m=+p[0]; d=+p[1]; y=+p[2]; }
+  else { d=+p[0]; m=+p[1]; y=+p[2]; }
+  /* seguranca: se o "dia" for impossivel, inverte */
+  if(d>31 || m>12){ var t=d; d=m; m=t; }
+  if(y<100) y+=2000;
+  var dt=new Date(y,m-1,d); dt.setHours(0,0,0,0);
+  if(isNaN(dt)||dt.getFullYear()!==y||dt.getMonth()!==m-1) return null;
+  return dt;
+}
+/* negativo = ja vencido ha N dias */
+function diasParaVencer(dstr){
+  var dt=parseData(dstr);
+  if(!dt) return null;
+  return Math.round((dt-hojeZero())/86400000);
+}
+function situacaoPorDias(dv){
+  if(dv===null) return 'SEM DATA';
+  if(dv<0) return 'VENCIDO';
+  if(dv<=AVENCER_DIAS) return 'A VENCER';
+  return 'VIGENTE';
+}
+function normLocal(s){
+  return (s||'').toString().toUpperCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^A-Z0-9 .]/g,' ').replace(/\s+/g,' ').trim();
+}
+function peDoLocal(local){
+  var k=normLocal(local);
+  if(LOCAL_PE[k]) return LOCAL_PE[k];
+  var achou=null;
+  Object.keys(LOCAL_PE).forEach(function(chave){
+    if(!achou && k && (k.indexOf(chave)===0 || chave.indexOf(k)===0)) achou=LOCAL_PE[chave];
+  });
+  return achou;
+}
+
+/* ============ CSV NOMINAL — FONTE PRIMARIA ============ */
+/* Le a aba publica (sem CPF) e calcula vigente/vencido/a vencer aqui,
+   contra a data de hoje. Nao depende de nenhuma coluna calculada. */
+var BRIG_OK = false;      /* nominal carregou nesta sessao */
+/* cadastro local original, usado como fallback por PE */
+var BASELINE = {};
+DATA.forEach(function(d){ BASELINE[d.pe]={quadro:d.quadro,ativos:d.ativos,venc:d.venc,futuros:d.futuros}; });
+var SEM_PE = [];          /* registros cujo local nao casou com nenhum PE */
+var SEM_DATA = [];        /* registros sem data de vencimento legivel */
 function fetchBrigadistas(){
   if(!BRIG_URL){ return; }
   fetch(BRIG_URL)
     .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
     .then(function(text){
       var rows=parseCSV(text);
-      var hi=-1;
-      for(var i=0;i<rows.length;i++){ if(rows[i].indexOf('PE')>-1 && rows[i].indexOf('Nome')>-1){hi=i;break;} }
-      if(hi<0) return;
-      var h=rows[hi], cm={}; h.forEach(function(x,ix){cm[x.trim()]=ix;});
-      BRIG={};
-      for(var j=hi+1;j<rows.length;j++){
-        var r=rows[j]; var pe=r[cm['PE']]; if(!pe||pe.indexOf('PE-')!==0) continue;
-        if(!BRIG[pe]) BRIG[pe]=[];
-        BRIG[pe].push({
-          nome:r[cm['Nome']]||'', funcao:r[cm['Funcao']]||r[cm['Função']]||'',
-          cert:r[cm['Certificado']]||'', dataCurso:r[cm['DataCurso']]||r[cm['Data do curso']]||'',
-          validade:r[cm['Validade']]||'', ch:r[cm['CargaHoraria']]||r[cm['Carga horaria']]||''
-        });
+      /* acha o cabecalho: precisa ter NOME e alguma coluna de vencimento */
+      var hi=-1, cm={};
+      for(var i=0;i<rows.length;i++){
+        var up=rows[i].map(function(x){return normLocal(x);});
+        if(up.indexOf('NOME')>-1 && up.some(function(x){return x.indexOf('VENCIMENTO')>-1||x==='VALIDADE';})){ hi=i; break; }
       }
+      if(hi<0) throw new Error('Cabecalho nominal nao encontrado');
+      rows[hi].forEach(function(x,ix){ cm[normLocal(x)]=ix; });
+      function col(r,nomes){
+        for(var i=0;i<nomes.length;i++){ var ix=cm[nomes[i]]; if(ix!==undefined && r[ix]!==undefined) return r[ix]; }
+        return '';
+      }
+      var corpo=rows.slice(hi+1).filter(function(r){ return col(r,['NOME']); });
+      DATE_FMT = detectDateFmt(corpo.map(function(r){
+        return col(r,['DATA DO VENCIMENTO','VENCIMENTO','VALIDADE','DATA VENCIMENTO']);
+      }));
+
+      BRIG={}; SEM_PE=[]; SEM_DATA=[];
+      corpo.forEach(function(r){
+        var nome=col(r,['NOME']);
+        var local=col(r,['LOCAL DE TRABALHO','LOCAL','AREA']);
+        var val=col(r,['DATA DO VENCIMENTO','VENCIMENTO','VALIDADE','DATA VENCIMENTO']);
+        var peCol=col(r,['PE','PONTO DE ENCONTRO','PE ASSOCIADO']);
+        var pe=(peCol && peCol.indexOf('PE-')===0) ? peCol : peDoLocal(local);
+        var dv=diasParaVencer(val);
+        var reg={
+          nome:nome,
+          funcao:[col(r,['EMPRESA']),col(r,['TURNO']),col(r,['HORARIO'])].filter(Boolean).join(' · '),
+          empresa:col(r,['EMPRESA']), turno:col(r,['TURNO']), local:local,
+          validade:val, dias:dv, situacao:situacaoPorDias(dv)
+        };
+        if(dv===null) SEM_DATA.push(reg);
+        if(!pe){ SEM_PE.push(reg); return; }
+        if(!BRIG[pe]) BRIG[pe]=[];
+        BRIG[pe].push(reg);
+      });
+      Object.keys(BRIG).forEach(function(pe){
+        BRIG[pe].sort(function(a,b){ return (a.dias===null?1e9:a.dias)-(b.dias===null?1e9:b.dias); });
+      });
+      BRIG_OK = Object.keys(BRIG).length>0;
+      if(BRIG_OK) agregarPorPE();
+      LAST_SYNC=new Date();
+      refreshStatuses(); updateTitleBar(); updateMarkers(); applyFilters();
+      if(document.getElementById('dashboard') && document.getElementById('dashboard').style.display==='block') renderDashboard();
+      setStatusLine();
     })
-    .catch(function(e){ console.warn('Nominal indisponivel:',e); });
+    .catch(function(e){ console.warn('Nominal indisponivel:',e); BRIG_OK=false; setStatusLine(); });
 }
-function diasParaVencer(dstr){
-  if(!dstr) return null;
-  var p=dstr.split(/[\/\-]/); var dt;
-  if(p.length===3){
-    if(p[0].length===4) dt=new Date(p[0],p[1]-1,p[2]);
-    else dt=new Date(p[2],p[1]-1,p[0]);
-  } else return null;
-  if(isNaN(dt)) return null;
-  return Math.round((dt-new Date())/86400000);
+
+/* Recalcula quadro/ativos/venc/futuros de cada PE a partir dos registros. */
+function agregarPorPE(){
+  DATA.forEach(function(d){
+    var lista=BRIG[d.pe]||[];
+    /* PE sem nenhum registro na planilha: mantem o cadastro local e sinaliza,
+       em vez de zerar o ponto (ex.: base S.O.S. fora da aba publica). */
+    if(!lista.length){
+      var b=BASELINE[d.pe]||{};
+      d.quadro=b.quadro||0; d.ativos=b.ativos||0; d.venc=b.venc||0; d.futuros=b.futuros||0;
+      d.avencer=0; d.semNominal=true; return;
+    }
+    d.semNominal=false;
+    var vig=0, ven=0, av=0;
+    lista.forEach(function(b){
+      if(b.situacao==='VENCIDO') ven++;
+      else if(b.situacao==='A VENCER'){ av++; vig++; }
+      else if(b.situacao==='VIGENTE') vig++;
+    });
+    d.quadro=lista.length; d.ativos=vig; d.venc=ven; d.avencer=av; d.futuros=0;
+  });
+}
+
+function setStatusLine(){
+  var el=document.getElementById('csvStatus'); if(!el) return;
+  var t=computeTotals();
+  var ref=hojeZero().toLocaleDateString('pt-BR');
+  if(BRIG_OK){
+    var av=DATA.reduce(function(s,d){return s+(d.avencer||0);},0);
+    el.textContent='Calculado na planilha nominal em '+ref+' — '+t.vig+' vigentes · '+t.ven+' vencidos · '+av+' a vencer em '+AVENCER_DIAS+' dias'+
+      (SEM_PE.length? ' · '+SEM_PE.length+' sem PE':'')+(SEM_DATA.length? ' · '+SEM_DATA.length+' sem data':'');
+  } else {
+    el.textContent='Nominal indisponivel — usando RESUMO_MAPA (conferir na planilha) · '+ref;
+  }
 }
 
 /* ============ MAPA ============ */
@@ -726,10 +883,12 @@ function showInfo(i){
     html+='<div class="pr"><span class="k">Necessarios (IT08)</span><span class="v">'+d.nec+'</span></div>';
     html+='<div class="pr"><span class="k">No quadro</span><span class="v">'+d.quadro+'</span></div>';
     html+='<div class="pr"><span class="k">Vigentes</span><span class="v" style="color:'+(d.ativos>=d.nec?'#4CAF50':'#f44336')+'">'+d.ativos+'</span></div>';
-    if(d.venc>0) html+='<div class="pr"><span class="k">Vencidos</span><span class="v" style="color:#FF9800">'+d.venc+'</span></div>';
+    if(d.venc>0) html+='<div class="pr"><span class="k">Vencidos</span><span class="v" style="color:#f44336">'+d.venc+'</span></div>';
+    if(d.avencer>0) html+='<div class="pr"><span class="k">A vencer ('+AVENCER_DIAS+'d)</span><span class="v" style="color:#FF9800">'+d.avencer+'</span></div>';
     if(d.futuros>0) html+='<div class="pr"><span class="k">Futuros</span><span class="v" style="color:#90CAF9">'+d.futuros+'</span></div>';
     var saldo=d.ativos-d.nec;
     html+='<div class="pr"><span class="k">Saldo preliminar</span><span class="v" style="color:'+(saldo>=0?'#4CAF50':'#f44336')+'">'+(saldo>=0?'+':'')+saldo+'</span></div>';
+    if(BRIG_OK && d.semNominal) html+='<div class="pr"><span class="k" style="color:#FF9800">Sem registros na planilha</span><span class="v" style="color:#FF9800">cadastro local</span></div>';
   } else {
     html+='<div style="font-size:11px;color:#aaa;padding:4px 0">'+d.obs+'</div>';
   }
@@ -738,11 +897,15 @@ function showInfo(i){
 
   /* BRIGADISTAS NOMINAIS (se planilha configurada) */
   if(BRIG[d.pe] && BRIG[d.pe].length){
-    html+='<div class="panel-section"><h3>BRIGADISTAS</h3><table class="brig-table"><tr><th>Nome</th><th>Função</th><th>Validade</th></tr>';
+    html+='<div class="panel-section"><h3>BRIGADISTAS ('+BRIG[d.pe].length+')</h3>'+
+          '<table class="brig-table"><tr><th>Nome</th><th>Empresa · turno</th><th>Validade</th><th>Situação</th></tr>';
     BRIG[d.pe].forEach(function(b){
-      var dv=diasParaVencer(b.validade), cls='';
-      if(dv!==null && dv<0) cls='brig-venc'; else if(dv!==null && dv<=30) cls='brig-avencer';
-      html+='<tr><td>'+b.nome+'</td><td>'+b.funcao+'</td><td class="'+cls+'">'+(b.validade||'-')+'</td></tr>';
+      var dv=(b.dias!==undefined? b.dias : diasParaVencer(b.validade)), cls='';
+      if(dv!==null && dv<0) cls='brig-venc'; else if(dv!==null && dv<=AVENCER_DIAS) cls='brig-avencer';
+      var txt = dv===null ? 'sem data' : (dv<0 ? 'vencido há '+Math.abs(dv)+'d' : (dv===0 ? 'vence hoje' : (dv<=AVENCER_DIAS ? 'vence em '+dv+'d' : 'vigente ('+dv+'d)')));
+      var dt=parseData(b.validade);
+      var dstr=dt? dt.toLocaleDateString('pt-BR') : (b.validade||'-');
+      html+='<tr><td>'+b.nome+'</td><td>'+(b.funcao||'')+'</td><td class="'+cls+'">'+dstr+'</td><td class="'+cls+'">'+txt+'</td></tr>';
     });
     html+='</table></div>';
   }
@@ -902,10 +1065,16 @@ function renderDashboard(){
     return '<div class="rank-row"><span class="pe">'+r.pe+' '+r.nome+'</span><span class="def" style="color:'+c+'">'+(r.def>0?'-'+r.def:'OK')+'</span></div>';
   }).join('');
   /* vencimentos */
-  var venc=DATA.filter(function(d){return d.venc>0;}).sort(function(a,b){return b.venc-a.venc;});
-  document.getElementById('vencList').innerHTML = venc.length? venc.map(function(d){
-    return '<div class="venc-row"><span>'+d.pe+' '+d.nome+'</span><span style="color:#FF9800;font-weight:700">'+d.venc+' vencido(s)</span></div>';
-  }).join('') : '<div style="color:#4CAF50;font-size:12px">Nenhuma reciclagem vencida.</div>';
+  var venc=DATA.filter(function(d){return d.venc>0||d.avencer>0;}).sort(function(a,b){return (b.venc||0)-(a.venc||0);});
+  document.getElementById('vencList').innerHTML = (venc.length? venc.map(function(d){
+    var dir='';
+    if(d.venc>0) dir+='<span style="color:#f44336;font-weight:700">'+d.venc+' vencido(s)</span>';
+    if(d.avencer>0) dir+=(dir?' · ':'')+'<span style="color:#FF9800;font-weight:700">'+d.avencer+' a vencer</span>';
+    return '<div class="venc-row"><span>'+d.pe+' '+d.nome+'</span><span>'+dir+'</span></div>';
+  }).join('') : '<div style="color:#4CAF50;font-size:12px">Nenhuma reciclagem vencida.</div>')
+  + (SEM_PE.length? '<div class="venc-row" style="border-top:1px solid rgba(255,255,255,.2);margin-top:6px"><span>SEM PE DEFINIDO (local não mapeado)</span><span style="color:#FF9800;font-weight:700">'+SEM_PE.length+' registro(s) · '+SEM_PE.filter(function(b){return b.situacao==='VENCIDO';}).length+' vencido(s)</span></div>'
+     +'<div style="font-size:10px;color:#9aa;padding-top:4px">Locais: '+Array.from(new Set(SEM_PE.map(function(b){return b.local||'(vazio)';}))).join(', ')+'</div>' : '')
+  + (SEM_DATA.length? '<div class="venc-row"><span>SEM DATA DE VENCIMENTO</span><span style="color:#FF9800;font-weight:700">'+SEM_DATA.length+' registro(s)</span></div>' : '');
 }
 function kpi(v,l,c){ return '<div class="kpi"><div class="v" style="color:'+c+'">'+v+'</div><div class="l">'+l+'</div></div>'; }
 
@@ -1118,7 +1287,8 @@ map.on('click',function(e){
 function abrirVencidos(){document.getElementById('vencModal').style.display='block';carregarVencidos();}
 function fecharVencidos(){document.getElementById('vencModal').style.display='none';}
 function imprimirVencidos(){document.body.classList.add('printing-venc');window.print();setTimeout(function(){document.body.classList.remove('printing-venc');},600);}
-function _vd(s){s=(s||'').trim();var m=s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);if(!m)return null;var a=+m[1],b=+m[2],y=+m[3];if(y<100)y+=2000;var mo=a,d=b;if(a>12){d=a;mo=b;}var dt=new Date(y,mo-1,d);return isNaN(dt)?null:dt;}
+/* usa o mesmo parser do mapa (formato detectado na carga) */
+function _vd(s){ return parseData(s); }
 function _mcpf(c){c=(c||'').trim();return c.length>=7?c.slice(0,3)+'.***.***-'+c.slice(-2):c;}
 function _vidx(H,names){var i;for(var a=0;a<names.length;a++){i=H.findIndex(function(h){return h.trim().toUpperCase()===names[a];});if(i>=0)return i;}for(var b=0;b<names.length;b++){i=H.findIndex(function(h){return h.trim().toUpperCase().indexOf(names[b])>=0;});if(i>=0)return i;}return -1;}
 function _pasteUI(msg){
@@ -1137,7 +1307,9 @@ function renderVencidos(text){
   if(hi<0){out.innerHTML='<p style="color:#b00">Não encontrei o cabeçalho (NOME/EMPRESA) no CSV.</p>';return;}
   var H=rows[hi];
   var iN=_vidx(H,['NOME']),iE=_vidx(H,['EMPRESA']),iC=_vidx(H,['CPF']),iT=_vidx(H,['TURNO']),iHo=_vidx(H,['HORARIO','HORÁRIO']),iL=_vidx(H,['LOCAL DE TRABALHO','LOCAL']),iV=_vidx(H,['DATA DO VENCIMENTO','VENCIMENTO']);
-  var hoje=new Date();hoje.setHours(0,0,0,0);var venc=[],tot=0;
+  /* detecta o formato da coluna de data nesta planilha antes de comparar */
+  DATE_FMT=detectDateFmt(rows.slice(hi+1).map(function(r){return r[iV];}));
+  var hoje=hojeZero();var venc=[],tot=0;
   for(var k=hi+1;k<rows.length;k++){var r=rows[k];if(!r[iN]||!r[iN].trim())continue;tot++;var dv=_vd(r[iV]);if(!dv||dv>=hoje)continue;
     venc.push({nome:r[iN].trim(),empresa:(r[iE]||'').trim().toUpperCase(),cpf:_mcpf(r[iC]),turno:(r[iT]||'').trim(),hor:(r[iHo]||'').trim(),local:(r[iL]||'').trim(),dtv:(r[iV]||'').trim(),dias:Math.round((hoje-dv)/86400000)});}
   if(!venc.length){out.innerHTML='<p>Nenhum treinamento vencido ('+tot+' registros lidos).</p>';return;}
