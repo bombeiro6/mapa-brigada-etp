@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestão de Brigada IT08 — ETP Parauapebas (v3)</title>
+<title>Gestão de Brigada IT08 — ETP Parauapebas (v6)</title>
 <!-- v3 — 21/09/2026: vigente/vencido/a vencer passam a ser CALCULADOS na
      abertura, a partir da DATA DO VENCIMENTO da aba nominal x a data de hoje.
      A aba RESUMO_MAPA virou apenas fallback. A coluna PRAZO da planilha nao e
@@ -102,6 +102,12 @@ body{font-family:Arial,sans-serif;background:#111;color:#fff}
 .pe-marker{background:none;border:none}
 .pin-wrap{display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.2s,opacity 0.2s}
 .pin-wrap:hover{transform:translateY(-4px)}
+/* ===== DESTAQUE DO PONTO SELECIONADO (so enquanto o painel dele esta aberto) ===== */
+@keyframes pePulse{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.10)}}
+@keyframes peHalo{0%{box-shadow:0 0 0 0 rgba(255,255,255,.55)}70%{box-shadow:0 0 0 18px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+.pin-wrap.sel{animation:pePulse 1.6s ease-in-out infinite;z-index:600}
+.pin-wrap.sel .pin-head{animation:peHalo 1.6s ease-out infinite;border:2px solid #fff}
+.pin-wrap.sel .pin-label{color:#fff;font-weight:700;text-shadow:0 1px 3px #000}
 .pin-head{
   padding:4px 10px;border-radius:6px;font-size:12px;font-weight:800;
   color:#fff;text-align:center;white-space:nowrap;
@@ -225,7 +231,7 @@ body.has-alert .dashboard{top:82px}
       <span>Terminal de Parauapebas (ETP) — Vale Metais Básicos</span>
     </div>
     <div class="top-nums">
-      <div class="nb"><div class="nb-v">24</div><div class="nb-l">Pontos</div></div>
+      <div class="nb"><div class="nb-v" id="nPontos">—</div><div class="nb-l">Pontos</div></div>
       <div class="nb"><div class="nb-v" id="nVig" style="color:#4CAF50">—</div><div class="nb-l">Ativos</div></div>
       <div class="nb"><div class="nb-v" id="nVenc" style="color:#FF9800">—</div><div class="nb-l">Vencidos</div></div>
       <div class="nb"><div class="nb-v" id="nCrit" style="color:#f44336">—</div><div class="nb-l">Críticos</div></div>
@@ -382,7 +388,8 @@ var DATA = [
 {"pe":"PE-22","nome":"Subestacao","lat":-6.000836,"lon":-49.898669,"area":"Subestacao Manutencao","risco":"ALTO","cls":"M-3","popFixa":5,"nec":5,"quadro":5,"ativos":3,"venc":2,"futuros":0,"status":"ATENCAO","obs":"RISCO ALTO. Subestacao eletrica (M-3). Brigada propria: minimo 5. 3 ativos / 2 vencidos. Ponto INDEPENDENTE (separado do PE-23) para controle proprio de reciclagem.","cobre":[],"cobertoPor":null,"apoio":["PE-23"],"areas":["Subestacao eletrica"]},
 {"pe":"PE-23","nome":"Escritorio Central","lat":-6.000694,"lon":-49.898503,"area":"Escritorio Central Vale","risco":"BAIXO","cls":"D-1","popFixa":30,"nec":3,"quadro":16,"ativos":12,"venc":4,"futuros":0,"status":"REGULAR","obs":"12 brigadistas ativos. Saldo preliminar +9. D-1 Baixo, Nota 5: pop 30 > 10, +1 grupo ate 20 = 3 min.","cobre":["PE-11","PE-24"],"cobertoPor":null,"apoio":["PE-22"],"areas":["Escritorio Central","SESMT","Ferramentaria","Laboratorio Eletrico","Subestacao (PE-22)","Dojo (PE-24)"]},
 {"pe":"PE-24","nome":"Dojo","lat":-6.000403,"lon":-49.898219,"area":"Escritorio Central Vale","risco":"BAIXO","cls":"E-4","popFixa":0,"nec":0,"quadro":0,"ativos":0,"venc":0,"futuros":0,"status":"VINCULADO","obs":"Sala de treinamento com maquinas (risco de pequeno porte) e produtos das classes A e C. Centro de treinamento profissional E-4, risco baixo. Vinculado ao PE-23.","cobre":[],"cobertoPor":"PE-23","areas":["Patio Dojo"]},
-{"pe":"PE-25","nome":"Base de Emergencia","lat":-6.001447,"lon":-49.900342,"area":"S.O.S.","risco":"BAIXO","cls":"D-1","popFixa":8,"nec":3,"quadro":5,"ativos":5,"venc":0,"futuros":0,"status":"BASE","obs":"Base principal de emergencia (S.O.S.): Bombeiros Civis 5 (diurno) + 2 (noturno). Ambulancia e viaturas. No maximo ~8 pessoas presentes. Retaguarda de todo o terminal.","cobre":["PE-16"],"cobertoPor":null,"apoio":[],"areas":["Base de Emergencia","Container Materiais","Ambulancia","Viaturas (SE-11, HILUX)"]}
+{"pe":"PE-25","nome":"Base de Emergencia","lat":-6.001447,"lon":-49.900342,"area":"S.O.S.","risco":"BAIXO","cls":"D-1","popFixa":8,"nec":3,"quadro":5,"ativos":5,"venc":0,"futuros":0,"status":"BASE","obs":"Base principal de emergencia (S.O.S.): Bombeiros Civis 5 (diurno) + 2 (noturno). Ambulancia e viaturas. No maximo ~8 pessoas presentes. Retaguarda de todo o terminal.","cobre":["PE-16"],"cobertoPor":null,"apoio":[],"areas":["Base de Emergencia","Container Materiais","Ambulancia","Viaturas (SE-11, HILUX)"]},
+{"pe":"PE-26","nome":"Galpao do Niquel — Lado Containers","lat":-6.001188,"lon":-49.899562,"area":"Niquel Operacao","risco":"MEDIO","cls":"I-2","popFixa":0,"nec":0,"quadro":0,"ativos":0,"venc":0,"futuros":0,"status":"VINCULADO","ajustavel":true,"obs":"Ponto de encontro adicional do Galpao do Niquel, no lado oposto ao PE-15. Acrescentado para reforcar a rota de fuga: a extensao do galpao torna o percurso ate o PE-15 longo demais para quem trabalha neste lado. Area coberta pela brigada do PE-15.","cobre":[],"cobertoPor":"PE-15","apoio":["PE-15"],"areas":["Galpao do Niquel — lado containers","Rota de fuga do lado oposto"]}
 ];
 
 var PEINDEX = {};
@@ -454,6 +461,8 @@ function computeTotals(){
 }
 function updateTitleBar(){
   var t = computeTotals();
+  var np=document.getElementById('nPontos');
+  if(np) np.textContent = DATA.length;
   document.getElementById('nVig').textContent = t.vig;
   document.getElementById('nVenc').textContent = t.ven;
   document.getElementById('nCrit').textContent = t.crit;
@@ -505,10 +514,21 @@ function parseCSV(text){
 }
 
 /* ============ CSV FETCH E MERGE (efetivo por PE) ============ */
+/* IMPORTANTE: o CSV publicado do Google e servido com cache. Sem furar esse
+   cache, o navegador (principalmente no iPhone/PWA) devolve a copia antiga e a
+   tela nao muda, mesmo com a planilha ja atualizada. Toda leitura leva um
+   parametro novo e vai com cache desligado. */
+function semCache(url){
+  return url + (url.indexOf('?')>-1?'&':'?') + '_=' + Date.now();
+}
+function lerCSV(url){
+  return fetch(semCache(url),{cache:'no-store'})
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); });
+}
 function fetchAndMerge(){
   var st=document.getElementById('csvStatus'); if(st) st.textContent='Atualizando dados da planilha...';
-  fetch(CSV_URL)
-    .then(function(resp){ if(!resp.ok) throw new Error('HTTP '+resp.status); return resp.text(); })
+  lerCSV(CSV_URL)
+    .then(function(resp){ return resp; })
     .then(function(text){
       var rows = parseCSV(text);
       var headerIdx = -1;
@@ -554,8 +574,10 @@ function fetchAndMerge(){
 /* Formato da coluna de validade: detectado 1x por carga.
    'DMA' = dia/mes/ano | 'MDA' = mes/dia/ano | 'ISO' = aaaa-mm-dd     */
 var DATE_FMT = 'DMA';
+var DATE_AMBIGUAS = 0;   /* datas que podem ser lidas de dois jeitos (ex.: 9/5/2026) */
+var DATE_MISTO = false;  /* a coluna tem dd/mm E mm/dd ao mesmo tempo */
 function detectDateFmt(vals){
-  var iso=0, dma=0, mda=0;
+  var iso=0, dma=0, mda=0, amb=0;
   vals.forEach(function(s){
     if(!s) return;
     var p=String(s).trim().split(/[\/\-\.]/);
@@ -564,9 +586,12 @@ function detectDateFmt(vals){
     var a=parseInt(p[0],10), b=parseInt(p[1],10);
     if(a>12 && b<=12) dma++;
     else if(b>12 && a<=12) mda++;
+    else amb++;            /* os dois <=12: so o formato da coluna decide */
   });
+  DATE_AMBIGUAS = amb;
+  DATE_MISTO = (dma>0 && mda>0);
   if(iso>dma && iso>mda) return 'ISO';
-  return mda>dma ? 'MDA' : 'DMA';   /* empate/ambiguo -> padrao BR */
+  return mda>dma ? 'MDA' : 'DMA';   /* empate -> padrao BR */
 }
 function hojeZero(){ var h=new Date(); h.setHours(0,0,0,0); return h; }
 function parseData(s){
@@ -622,8 +647,7 @@ var SEM_PE = [];          /* registros cujo local nao casou com nenhum PE */
 var SEM_DATA = [];        /* registros sem data de vencimento legivel */
 function fetchBrigadistas(){
   if(!BRIG_URL){ return; }
-  fetch(BRIG_URL)
-    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+  lerCSV(BRIG_URL)
     .then(function(text){
       var rows=parseCSV(text);
       /* acha o cabecalho: precisa ter NOME e alguma coluna de vencimento */
@@ -703,8 +727,20 @@ function setStatusLine(){
   var ref=hojeZero().toLocaleDateString('pt-BR');
   if(BRIG_OK){
     var av=DATA.reduce(function(s,d){return s+(d.avencer||0);},0);
-    el.textContent='Calculado na planilha nominal em '+ref+' — '+t.vig+' vigentes · '+t.ven+' vencidos · '+av+' a vencer em '+AVENCER_DIAS+' dias'+
+    var hora=LAST_SYNC? LAST_SYNC.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '--:--';
+    el.textContent='Planilha lida às '+hora+' · calculado em '+ref+' — '+t.vig+' vigentes · '+t.ven+' vencidos · '+av+' a vencer em '+AVENCER_DIAS+' dias'+
       (SEM_PE.length? ' · '+SEM_PE.length+' sem PE':'')+(SEM_DATA.length? ' · '+SEM_DATA.length+' sem data':'');
+    if(DATE_MISTO || DATE_AMBIGUAS>0){
+      var aviso=document.getElementById('dateWarn');
+      if(!aviso){
+        aviso=document.createElement('div'); aviso.id='dateWarn';
+        aviso.style.cssText='font-size:10px;color:#FF9800;padding:2px 6px';
+        el.parentNode.appendChild(aviso);
+      }
+      aviso.textContent='⚠ Coluna DATA DO VENCIMENTO com formatos misturados'+
+        (DATE_AMBIGUAS>0? ' — '+DATE_AMBIGUAS+' data(s) que podem ser lidas como dia/mês ou mês/dia':'')+
+        '. Lendo como '+(DATE_FMT==='MDA'?'mês/dia/ano':(DATE_FMT==='ISO'?'ano-mês-dia':'dia/mês/ano'))+'. Padronize a coluna na planilha.';
+    }
   } else {
     el.textContent='Nominal indisponivel — usando RESUMO_MAPA (conferir na planilha) · '+ref;
   }
@@ -747,9 +783,68 @@ DATA.forEach(function(d,i){
       '<div class="pin-arrow" style="border-top:8px solid '+c+'"></div>'+
       '<div class="pin-label">'+d.nome+'</div></div>'
   });
-  var m = L.marker(DISP[d.pe],{icon:icon}).addTo(map).on('click',function(){showInfo(i);});
+  var m = L.marker(DISP[d.pe],{icon:icon,draggable:!!d.ajustavel,autoPan:true})
+            .addTo(map).on('click',function(){showInfo(i);});
+  if(d.ajustavel){
+    m.on('dragend',function(ev){
+      var ll=ev.target.getLatLng();
+      d.lat=+ll.lat.toFixed(6); d.lon=+ll.lng.toFixed(6);
+      DISP[d.pe]=[d.lat,d.lon];
+      mostrarCoord(d);
+      if(selectedIdx===i){ showInfo(i); destacarPonto(i); }
+    });
+  }
   markers.push(m);
 });
+
+/* ===== DESTAQUE DO PONTO CLICADO =====
+   circulo na cor do status + pino pulsando, enquanto o painel daquele PE esta aberto. */
+var selLayer=null;
+function destacarPonto(i){
+  limparDestaque();
+  var d=DATA[i]; if(!d) return;
+  var pos=DISP[d.pe]||[d.lat,d.lon];
+  selLayer=L.circle(pos,{radius:42,color:cor(d.status),weight:2,dashArray:'6,6',
+    fill:true,fillColor:cor(d.status),fillOpacity:0.12,interactive:false}).addTo(map);
+  var pin=document.getElementById('pin-'+i);
+  if(pin) pin.classList.add('sel');
+}
+function limparDestaque(){
+  if(selLayer){ map.removeLayer(selLayer); selLayer=null; }
+  var p=document.querySelector('.pin-wrap.sel');
+  if(p) p.classList.remove('sel');
+}
+
+/* caixa com a coordenada, exibida ao reposicionar um ponto ajustavel */
+function mostrarCoord(d){
+  var box=document.getElementById('coordBox');
+  if(!box){
+    box=document.createElement('div'); box.id='coordBox';
+    box.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:74px;z-index:1200;'+
+      'background:#111c2e;border:2px solid #FFD600;border-radius:10px;padding:10px 14px;'+
+      'font-size:13px;color:#fff;box-shadow:0 4px 18px rgba(0,0,0,.5);max-width:92vw;text-align:center';
+    document.body.appendChild(box);
+  }
+  var txt=d.lat+', '+d.lon;
+  box.innerHTML='<div style="color:#FFD600;font-weight:700;margin-bottom:4px">'+d.pe+' — coordenada do pino</div>'+
+    '<div id="coordVal" style="font-family:monospace;font-size:15px;letter-spacing:.5px">'+txt+'</div>'+
+    '<div style="margin-top:7px;display:flex;gap:6px;justify-content:center">'+
+    '<button id="coordCopy" style="background:#FFD600;color:#111;border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer">COPIAR</button>'+
+    '<button id="coordClose" style="background:transparent;color:#9fb0c8;border:1px solid #39506f;border-radius:6px;padding:6px 12px;cursor:pointer">Fechar</button></div>'+
+    '<div style="margin-top:5px;font-size:10px;color:#9fb0c8">Arraste o pino amarelo ate o local exato e copie a coordenada.</div>';
+  document.getElementById('coordClose').onclick=function(){ box.remove(); };
+  document.getElementById('coordCopy').onclick=function(){
+    var b=document.getElementById('coordCopy');
+    function ok(){ b.textContent='COPIADO'; setTimeout(function(){b.textContent='COPIAR';},1500); }
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(ok,sel); }
+    else sel();
+    function sel(){
+      var r=document.createRange(); r.selectNode(document.getElementById('coordVal'));
+      var s2=window.getSelection(); s2.removeAllRanges(); s2.addRange(r);
+      try{ document.execCommand('copy'); ok(); }catch(e){}
+    }
+  };
+}
 
 function updateMarkers(){
   DATA.forEach(function(d,i){
@@ -860,6 +955,7 @@ var CLS_DESC={
 function showInfo(i){
   clearCoverage();
   selectedIdx=i;
+  destacarPonto(i);
   var d=DATA[i];
   var panel=document.getElementById('panel');
   panel.style.display='block';
@@ -977,7 +1073,7 @@ function showInfo(i){
   var pin=document.getElementById('pin-'+i);
   if(pin) pin.style.filter='drop-shadow(0 0 8px #FFD600)';
 }
-function closePanel(){ document.getElementById('panel').style.display='none'; clearCoverage(); selectedIdx=-1; }
+function closePanel(){ document.getElementById('panel').style.display='none'; clearCoverage(); limparDestaque(); selectedIdx=-1; }
 function fitAll(){ map.fitBounds(L.latLngBounds(DATA.map(function(d){return[d.lat,d.lon];})).pad(0.12)); }
 
 /* ============ FOTOS ============ */
@@ -1333,7 +1429,7 @@ function carregarVencidos(){
   var out=document.getElementById('vencOut');
   if(typeof BRIG_URL!=='undefined' && BRIG_URL){
     document.getElementById('vencCfg').innerHTML='';out.innerHTML='<p>Carregando lista de brigadistas...</p>';
-    fetch(BRIG_URL).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(renderVencidos)
+    lerCSV(BRIG_URL).then(renderVencidos)
       .catch(function(e){_pasteUI('Não foi possível ler pela URL ('+e.message+'). Cole o CSV da aba de brigadistas abaixo:');});
   } else {
     _pasteUI('A URL da aba de brigadistas ainda não foi configurada (variável <code>BRIG_URL</code>, perto do topo do arquivo). Cole o CSV abaixo para gerar agora, ou publique a aba em CSV e preencha a URL para ficar automático.');
