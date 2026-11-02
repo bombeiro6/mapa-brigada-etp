@@ -400,6 +400,7 @@ var PHOTOS = {};
 /* brigadistas nominais em memoria: { 'PE-07': [{nome,funcao,cert,dataCurso,validade,ch}] } */
 var BRIG = {};
 var LAST_SYNC = null;
+var ULTIMA_LEITURA = 0;   /* ms da ultima tentativa de leitura da planilha */
 
 /* ============ FUNCOES AUXILIARES ============ */
 function cor(s){
@@ -525,7 +526,14 @@ function lerCSV(url){
   return fetch(semCache(url),{cache:'no-store'})
     .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); });
 }
+/* Painel de PE aberto: redesenha com os numeros novos depois de cada leitura
+   (antes ficava com os valores antigos ate clicar de novo no PE). */
+function atualizarPainelAberto(){
+  var p=document.getElementById('panel');
+  if(selectedIdx>=0 && p && p.style.display==='block') showInfo(selectedIdx);
+}
 function fetchAndMerge(){
+  ULTIMA_LEITURA = Date.now();
   var st=document.getElementById('csvStatus'); if(st) st.textContent='Atualizando dados da planilha...';
   lerCSV(CSV_URL)
     .then(function(resp){ return resp; })
@@ -559,7 +567,7 @@ function fetchAndMerge(){
       }
       refreshStatuses();
       LAST_SYNC = new Date();
-      updateTitleBar(); updateMarkers(); applyFilters(); setStatusLine();
+      updateTitleBar(); updateMarkers(); applyFilters(); atualizarPainelAberto(); setStatusLine();
     })
     .catch(function(e){
       console.warn('CSV fallback:',e);
@@ -694,6 +702,7 @@ function fetchBrigadistas(){
       LAST_SYNC=new Date();
       refreshStatuses(); updateTitleBar(); updateMarkers(); applyFilters();
       if(document.getElementById('dashboard') && document.getElementById('dashboard').style.display==='block') renderDashboard();
+      atualizarPainelAberto();
       setStatusLine();
     })
     .catch(function(e){ console.warn('Nominal indisponivel:',e); BRIG_OK=false; setStatusLine(); });
@@ -703,10 +712,12 @@ function fetchBrigadistas(){
 function agregarPorPE(){
   DATA.forEach(function(d){
     var lista=BRIG[d.pe]||[];
-    /* PE sem nenhum registro na planilha: mantem o cadastro local e sinaliza,
-       em vez de zerar o ponto (ex.: base S.O.S. fora da aba publica). */
+    /* PE sem nenhum registro na planilha:
+       - PE-25 (base S.O.S.) nao esta na aba publica -> mantem o cadastro local;
+       - demais PEs -> ZERA. Antes voltava para os numeros antigos gravados no
+         arquivo, e quem saia da planilha continuava aparecendo no mapa. */
     if(!lista.length){
-      var b=BASELINE[d.pe]||{};
+      var b=(d.pe==='PE-25') ? (BASELINE[d.pe]||{}) : {};
       d.quadro=b.quadro||0; d.ativos=b.ativos||0; d.venc=b.venc||0; d.futuros=b.futuros||0;
       d.avencer=0; d.semNominal=true; return;
     }
@@ -1328,6 +1339,11 @@ fetchAndMerge();
 applyFilters();
 /* atualizacao automatica: rele a planilha a cada 5 minutos (para telao/mural) */
 setInterval(fetchAndMerge, 300000);
+/* ao voltar para a aba / app (celular suspende o timer em segundo plano),
+   rele na hora se a ultima leitura tiver mais de 30s */
+document.addEventListener('visibilitychange', function(){
+  if(!document.hidden && Date.now()-ULTIMA_LEITURA > 30000) fetchAndMerge();
+});
 
 map.on('click',function(e){
   if(e.originalEvent.target===map.getContainer()||e.originalEvent.target.classList.contains('leaflet-tile')){ closePanel(); }
