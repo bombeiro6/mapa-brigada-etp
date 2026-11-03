@@ -453,7 +453,7 @@ function statusLabel(d){
 function computeTotals(){
   var r=0,v=0,ve=0,f=0,crit=0,reqPE=0,confPE=0;
   DATA.forEach(function(d){
-    r += d.quadro||0; v += d.ativos||0; ve += d.venc||0; f += d.futuros||0;
+    if(d.pe!=='PE-25'){ r += d.quadro||0; v += d.ativos||0; ve += d.venc||0; f += d.futuros||0; } /* bombeiros civis (PE-25) fora do total */
     if(d.status==='CRITICO') crit++;
     if(d.nec>0 && !d.cobertoPor){ reqPE++; if(d.ativos>=d.nec) confPE++; }
   });
