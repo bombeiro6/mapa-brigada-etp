@@ -584,6 +584,7 @@ function fetchAndMerge(){
 var DATE_FMT = 'DMA';
 var DATE_AMBIGUAS = 0;   /* datas que podem ser lidas de dois jeitos (ex.: 9/5/2026) */
 var DATE_MISTO = false;  /* a coluna tem dd/mm E mm/dd ao mesmo tempo */
+var DATE_FORA = [];      /* registros com data claramente no formato oposto ao da coluna */
 function detectDateFmt(vals){
   var iso=0, dma=0, mda=0, amb=0;
   vals.forEach(function(s){
@@ -675,7 +676,7 @@ function fetchBrigadistas(){
         return col(r,['DATA DO VENCIMENTO','VENCIMENTO','VALIDADE','DATA VENCIMENTO']);
       }));
 
-      BRIG={}; SEM_PE=[]; SEM_DATA=[];
+      BRIG={}; SEM_PE=[]; SEM_DATA=[]; DATE_FORA=[];
       corpo.forEach(function(r){
         var nome=col(r,['NOME']);
         var local=col(r,['LOCAL DE TRABALHO','LOCAL','AREA']);
@@ -690,6 +691,12 @@ function fetchBrigadistas(){
           validade:val, dias:dv, situacao:situacaoPorDias(dv)
         };
         if(dv===null) SEM_DATA.push(reg);
+        /* data digitada no formato oposto ao da coluna (ex.: 22/09/2027 numa coluna mes/dia) */
+        var pp=String(val||'').trim().split(/[\/\-\.]/);
+        if(pp.length===3 && pp[0].length<=2){
+          var pa=parseInt(pp[0],10), pb=parseInt(pp[1],10);
+          if((DATE_FMT==='MDA' && pa>12 && pb<=12) || (DATE_FMT==='DMA' && pb>12 && pa<=12)) DATE_FORA.push(reg);
+        }
         if(!pe){ SEM_PE.push(reg); return; }
         if(!BRIG[pe]) BRIG[pe]=[];
         BRIG[pe].push(reg);
@@ -741,17 +748,22 @@ function setStatusLine(){
     var hora=LAST_SYNC? LAST_SYNC.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '--:--';
     el.textContent='Planilha lida às '+hora+' · calculado em '+ref+' — '+t.vig+' vigentes · '+t.ven+' vencidos · '+av+' a vencer em '+AVENCER_DIAS+' dias'+
       (SEM_PE.length? ' · '+SEM_PE.length+' sem PE':'')+(SEM_DATA.length? ' · '+SEM_DATA.length+' sem data':'');
-    if(DATE_MISTO || DATE_AMBIGUAS>0){
-      var aviso=document.getElementById('dateWarn');
+    /* Aviso so quando ha datas REALMENTE no formato oposto ao da coluna.
+       Datas com dia<=12 (ex.: 9/5/2026) nao geram aviso: seguem o formato da coluna. */
+    var aviso=document.getElementById('dateWarn');
+    if(DATE_FORA.length){
       if(!aviso){
         aviso=document.createElement('div'); aviso.id='dateWarn';
         aviso.style.cssText='font-size:10px;color:#FF9800;padding:2px 6px';
         el.parentNode.appendChild(aviso);
       }
-      aviso.textContent='⚠ Coluna DATA DO VENCIMENTO com formatos misturados'+
-        (DATE_AMBIGUAS>0? ' — '+DATE_AMBIGUAS+' data(s) que podem ser lidas como dia/mês ou mês/dia':'')+
-        '. Lendo como '+(DATE_FMT==='MDA'?'mês/dia/ano':(DATE_FMT==='ISO'?'ano-mês-dia':'dia/mês/ano'))+'. Padronize a coluna na planilha.';
-    }
+      var grupos={};
+      DATE_FORA.forEach(function(b){ var k=(b.empresa||'?')+' / '+(b.local||'?'); grupos[k]=(grupos[k]||0)+1; });
+      var lista=Object.keys(grupos).map(function(k){ return k+' ('+grupos[k]+')'; }).join('; ');
+      var fmtCol=(DATE_FMT==='MDA'?'mês/dia/ano':'dia/mês/ano'), fmtFora=(DATE_FMT==='MDA'?'dia/mês/ano':'mês/dia/ano');
+      aviso.textContent='⚠ '+DATE_FORA.length+' data(s) de vencimento digitada(s) como '+fmtFora+
+        ' (a coluna usa '+fmtCol+'): '+lista+'. O mapa lê certo, mas padronize na planilha.';
+    } else if(aviso){ aviso.remove(); }
   } else {
     el.textContent='Nominal indisponivel — usando RESUMO_MAPA (conferir na planilha) · '+ref;
   }
